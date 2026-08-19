@@ -1,5 +1,5 @@
 /* ============================================================
-   Datasheet design system — global stylesheet
+   Datasheet design system: global stylesheet
    Every color, size, and spacing value derives from DESIGN.md.
    ============================================================ */
 
@@ -62,7 +62,7 @@
     'Consolas', monospace;
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Spacing scale (px) — everything snaps to this */
+  /* Spacing scale (px): everything snaps to this */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
