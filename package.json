@@ -10,10 +10,13 @@
     "check": "astro check"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "astro": "^5.14.1"
   },
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.5",
-    "@fontsource/ibm-plex-sans": "^5.2.5"
+    "@fontsource/ibm-plex-sans": "^5.2.5",
+    "@resvg/resvg-js": "^2.6.2",
+    "wawoff2": "^2.0.1"
   }
 }

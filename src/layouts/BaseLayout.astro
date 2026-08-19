@@ -4,15 +4,36 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description: string;
+  /** OG image path relative to site root. */
+  image?: string;
+  /** Emit ProfilePage JSON-LD (home only). */
+  profilePage?: boolean;
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  image = '/og-image.png',
+  profilePage = false,
+} = Astro.props;
 
-// site is a commented placeholder in astro.config.mjs until deploy time,
-// so build an absolute canonical/OG URL only when it is set.
-const canonicalURL = Astro.site
-  ? new URL(Astro.url.pathname, Astro.site).href
-  : undefined;
+// `site` is set in astro.config.mjs, so absolute URLs always resolve.
+const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
+const imageURL = new URL(image, Astro.site).href;
+
+const profileLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  mainEntity: {
+    '@type': 'Person',
+    name: 'Zayd Mulani',
+    url: Astro.site?.href,
+    sameAs: [
+      'https://github.com/zaydmulani09',
+      'https://x.com/zaydmulani',
+    ],
+  },
+};
 ---
 
 <!doctype html>
@@ -23,21 +44,34 @@ const canonicalURL = Astro.site
 
     <title>{title}</title>
     <meta name="description" content={description} />
-    {canonicalURL && <link rel="canonical" href={canonicalURL} />}
+    <link rel="canonical" href={canonicalURL} />
 
     <!-- Favicon (registration-mark seed) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Open Graph placeholders — fill image + url at deploy time -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zayd Mulani" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    {canonicalURL && <meta property="og:url" content={canonicalURL} />}
-    {/* <meta property="og:image" content="/og-image.png" /> */}
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={imageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageURL} />
+
+    {
+      profilePage && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify(profileLd)}
+        />
+      )
+    }
 
     <!-- Preload the two most-used faces to cut first-paint swap -->
     <link
