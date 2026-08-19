@@ -1,12 +1,34 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectDatasheet from '../components/ProjectDatasheet.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+
+const tagline =
+  'I build local-first, inspectable infrastructure for the AI-agent era.';
+
+const secondary = [
+  {
+    name: 'ghost',
+    href: 'https://github.com/zaydmulani09/ghost',
+    outcome: 'browser-based local LLM, single HTML file',
+    lang: 'js',
+  },
+  {
+    name: 'fluid',
+    href: 'https://github.com/zaydmulani09/fluid',
+    outcome: 'WebGL2 Navier-Stokes fluid simulation',
+    lang: 'js',
+  },
+  {
+    name: 'vecdb',
+    href: 'https://github.com/zaydmulani09/vecdb',
+    outcome: 'hybrid HNSW + BM25 vector database',
+    lang: 'rust',
+  },
+];
 ---
 
-<BaseLayout
-  title="Zayd Mulani"
-  description="I build local-first, inspectable infrastructure for the AI-agent era, mostly in Rust."
->
+<BaseLayout title="Zayd Mulani" description={tagline}>
   <!-- Header: registration-mark motif as the recurring section marker -->
   <div slot="header" class="wordmark">
     <span class="reg-mark" aria-hidden="true"></span>
@@ -15,10 +37,23 @@ import ProjectDatasheet from '../components/ProjectDatasheet.astro';
 
   <h1 class="t-display">Zayd Mulani</h1>
 
-  <p class="t-body measure lede">
-    I build local-first, inspectable infrastructure for the AI-agent era,
-    mostly in Rust.
-  </p>
+  <p class="t-body measure lede">{tagline}</p>
+
+  <!-- Spec-field strip -->
+  <dl class="spec-strip t-label">
+    <div class="spec-field">
+      <dt>Location</dt>
+      <dd>New Jersey, US</dd>
+    </div>
+    <div class="spec-field">
+      <dt>Focus</dt>
+      <dd>local-first AI-agent infrastructure</dd>
+    </div>
+    <div class="spec-field">
+      <dt>Status</dt>
+      <dd>open to internships &amp; research</dd>
+    </div>
+  </dl>
 
   <nav aria-label="Contact and profiles" class="links">
     <a class="link" href="https://github.com/zaydmulani09" rel="noopener noreferrer">GitHub</a>
@@ -28,8 +63,41 @@ import ProjectDatasheet from '../components/ProjectDatasheet.astro';
 
   <ProjectDatasheet />
 
-  <div slot="footer" class="t-small">
-    &copy; 2026 Zayd Mulani
+  <!-- About -->
+  <section class="about" aria-labelledby="about-heading">
+    <SectionLabel label="About" id="about-heading" />
+    <p class="t-body measure about-copy">
+      I'm Zayd, a high-school senior in New Jersey building local-first,
+      inspectable infrastructure for AI agents, mostly in the open. Most of my
+      tools are in Rust — memory, MCP plumbing, observability, fuzzing — but I
+      also work in data and ML as an engineering intern and ship web things
+      when a problem calls for it. I like software you can run yourself, read
+      end to end, and verify.
+    </p>
+  </section>
+
+  <!-- Secondary projects -->
+  <section class="more" aria-labelledby="more-heading">
+    <SectionLabel label="More" id="more-heading" />
+    <ul class="more-list">
+      {
+        secondary.map((p) => (
+          <li class="more-item">
+            <a class="more-link" href={p.href} rel="noopener noreferrer">
+              {p.name}
+            </a>
+            <span class="more-desc t-body">{p.outcome}</span>
+            <span class="more-lang t-data">{p.lang}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <div slot="footer" class="site-foot">
+    <span class="t-small">&copy; 2026 Zayd Mulani</span>
+    <span class="foot-sep" aria-hidden="true">&middot;</span>
+    <a class="foot-link t-small" href="/colophon">Colophon</a>
   </div>
 </BaseLayout>
 
@@ -53,8 +121,35 @@ import ProjectDatasheet from '../components/ProjectDatasheet.astro';
     color: var(--ink);
   }
 
+  /* ---- Spec-field strip ---- */
+  .spec-strip {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    color: var(--muted);
+  }
+  .spec-field {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  /* Middot separator between fields (not before the first). */
+  .spec-field + .spec-field::before {
+    content: '\00B7';
+    margin-right: var(--space-2);
+    color: var(--rule);
+  }
+  .spec-field dt {
+    color: var(--muted);
+  }
+  .spec-field dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
   .links {
-    margin-top: var(--space-7);
+    margin-top: var(--space-6);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-5);
@@ -72,9 +167,103 @@ import ProjectDatasheet from '../components/ProjectDatasheet.astro';
       border-color var(--motion-fast) ease,
       color var(--motion-fast) ease;
   }
-
   .link:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
+  }
+
+  /* ---- About ---- */
+  .about {
+    margin-top: var(--space-8);
+  }
+  .about-copy {
+    color: var(--ink);
+  }
+
+  /* ---- Secondary projects ---- */
+  .more {
+    margin-top: var(--space-8);
+  }
+  .more-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .more-item {
+    display: grid;
+    grid-template-columns: 12ch 1fr auto;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .more-item:first-child {
+    border-top: 1px solid var(--rule);
+  }
+  .more-link {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition:
+      color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease;
+  }
+  .more-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .more-desc {
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
+  .more-lang {
+    color: var(--muted);
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  /* ---- Footer ---- */
+  .site-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  .foot-sep {
+    color: var(--rule);
+  }
+  .foot-link {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    transition:
+      color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease;
+  }
+  .foot-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 720px) {
+    .more-item {
+      grid-template-columns: 1fr auto;
+      gap: var(--space-1) var(--space-3);
+    }
+    .more-link {
+      grid-column: 1;
+    }
+    .more-lang {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .more-desc {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
   }
 </style>
