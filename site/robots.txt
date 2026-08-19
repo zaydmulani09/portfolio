@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://zayd.dpdns.org/sitemap.xml
