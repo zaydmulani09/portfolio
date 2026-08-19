@@ -1,7 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const spec: { term: string; detail: string; placeholder?: boolean }[] = [
+const spec: {
+  term: string;
+  detail: string;
+  placeholder?: boolean;
+  href?: string;
+}[] = [
   { term: 'Build', detail: 'Astro, static output, no UI framework' },
   { term: 'Styles', detail: 'vanilla CSS, design tokens, no CSS framework' },
   {
@@ -18,8 +23,8 @@ const spec: { term: string; detail: string; placeholder?: boolean }[] = [
   },
   {
     term: 'Source',
-    detail: 'TODO: repo URL — fill at deploy time',
-    placeholder: true,
+    detail: 'github.com/zaydmulani09/portfolio',
+    href: 'https://github.com/zaydmulani09/portfolio',
   },
 ];
 ---
@@ -41,7 +46,15 @@ const spec: { term: string; detail: string; placeholder?: boolean }[] = [
         <div class="spec-row">
           <dt class="t-label spec-term">{row.term}</dt>
           <dd class:list={['t-data spec-detail', { placeholder: row.placeholder }]}>
-            {row.detail}
+            {
+              row.href ? (
+                <a class="spec-link" href={row.href} rel="noopener noreferrer">
+                  {row.detail}
+                </a>
+              ) : (
+                row.detail
+              )
+            }
           </dd>
         </div>
       ))
@@ -98,11 +111,24 @@ const spec: { term: string; detail: string; placeholder?: boolean }[] = [
   .spec-detail {
     margin: 0;
     color: var(--ink);
+    overflow-wrap: anywhere;
   }
   /* Clearly-marked placeholder value, filled at deploy time. */
   .spec-detail.placeholder {
     color: var(--muted);
     font-style: normal;
+  }
+  .spec-link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    transition:
+      color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease;
+  }
+  .spec-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 
   .site-foot {
