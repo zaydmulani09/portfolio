@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Zayd Mulani"
+  description="I build local-first, inspectable infrastructure for the AI-agent era, mostly in Rust."
+>
+  <!-- Header: registration-mark motif as the recurring section marker -->
+  <div slot="header" class="wordmark">
+    <span class="reg-mark" aria-hidden="true"></span>
+    <span class="t-label">Zayd Mulani</span>
+  </div>
+
+  <h1 class="t-display">Zayd Mulani</h1>
+
+  <p class="t-body measure lede">
+    I build local-first, inspectable infrastructure for the AI-agent era,
+    mostly in Rust.
+  </p>
+
+  <nav aria-label="Contact and profiles" class="links">
+    <a class="link" href="https://github.com/zaydmulani09" rel="noopener noreferrer">GitHub</a>
+    <a class="link" href="https://x.com/zaydmulani" rel="noopener noreferrer">X</a>
+    <a class="link" href="mailto:zaydmulani@gmail.com">Email</a>
+  </nav>
+
+  <div slot="footer" class="t-small">
+    &copy; 2026 Zayd Mulani
+  </div>
+</BaseLayout>
+
+<style>
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Registration mark: neutral ink square, single accent tick reserved. */
+  .reg-mark {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    flex: none;
+  }
+
+  .lede {
+    margin-top: var(--space-5);
+    color: var(--ink);
+  }
+
+  .links {
+    margin-top: var(--space-7);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+
+  .link {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 2px;
+    transition:
+      border-color var(--motion-fast) ease,
+      color var(--motion-fast) ease;
+  }
+
+  .link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+</style>
