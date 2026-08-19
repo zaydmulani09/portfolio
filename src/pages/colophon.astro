@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const spec: { term: string; detail: string; placeholder?: boolean }[] = [
+  { term: 'Build', detail: 'Astro, static output, no UI framework' },
+  { term: 'Styles', detail: 'vanilla CSS, design tokens, no CSS framework' },
+  {
+    term: 'Type',
+    detail: 'IBM Plex Mono + IBM Plex Sans, self-hosted woff2, latin subset',
+  },
+  { term: 'JavaScript', detail: 'none required to render' },
+  { term: 'Analytics', detail: 'none' },
+  { term: 'Hosting', detail: 'GitHub Pages' },
+  {
+    term: 'Accessibility',
+    detail:
+      'semantic HTML, keyboard nav, :focus-visible, prefers-reduced-motion, WCAG AA contrast',
+  },
+  {
+    term: 'Source',
+    detail: 'TODO: repo URL — fill at deploy time',
+    placeholder: true,
+  },
+];
+---
+
+<BaseLayout
+  title="Colophon — Zayd Mulani"
+  description="How this site is built: stack, type, and accessibility notes."
+>
+  <div slot="header" class="wordmark">
+    <span class="reg-mark" aria-hidden="true"></span>
+    <a class="t-label home-link" href="/">Zayd Mulani</a>
+  </div>
+
+  <h1 class="t-h1 page-title">Colophon</h1>
+
+  <dl class="spec-list">
+    {
+      spec.map((row) => (
+        <div class="spec-row">
+          <dt class="t-label spec-term">{row.term}</dt>
+          <dd class:list={['t-data spec-detail', { placeholder: row.placeholder }]}>
+            {row.detail}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  <div slot="footer" class="site-foot">
+    <span class="t-small">&copy; 2026 Zayd Mulani</span>
+    <span class="foot-sep" aria-hidden="true">&middot;</span>
+    <a class="foot-link t-small" href="/">Home</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .reg-mark {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    flex: none;
+  }
+  .home-link {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .home-link:hover {
+    color: var(--accent);
+  }
+
+  .page-title {
+    margin-bottom: var(--space-6);
+  }
+
+  .spec-list {
+    margin: 0;
+    max-width: var(--measure);
+    border-top: 1px solid var(--rule);
+  }
+  .spec-row {
+    display: grid;
+    grid-template-columns: 16ch 1fr;
+    gap: var(--space-4);
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .spec-term {
+    color: var(--muted);
+  }
+  .spec-detail {
+    margin: 0;
+    color: var(--ink);
+  }
+  /* Clearly-marked placeholder value, filled at deploy time. */
+  .spec-detail.placeholder {
+    color: var(--muted);
+    font-style: normal;
+  }
+
+  .site-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  .foot-sep {
+    color: var(--rule);
+  }
+  .foot-link {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    transition:
+      color var(--motion-fast) ease,
+      border-color var(--motion-fast) ease;
+  }
+  .foot-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    .spec-row {
+      grid-template-columns: 1fr;
+      gap: var(--space-1);
+    }
+  }
+</style>

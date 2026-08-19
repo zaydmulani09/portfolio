@@ -1,0 +1,40 @@
+---
+// Section boundary marker: crop-mark registration ticks + a label heading.
+// Reused by the About and More sections (mirrors the datasheet section rule).
+interface Props {
+  label: string;
+  id: string;
+}
+const { label, id } = Astro.props;
+---
+
+<div class="section-rule">
+  <span class="crop crop-l" aria-hidden="true"></span>
+  <h2 id={id} class="t-label section-label">{label}</h2>
+  <span class="crop crop-r" aria-hidden="true"></span>
+</div>
+
+<style>
+  .section-rule {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .section-label {
+    color: var(--muted);
+    flex: none;
+    margin: 0;
+  }
+  .crop {
+    height: 8px;
+    flex: 1 1 auto;
+    border-top: 1px solid var(--rule);
+  }
+  .crop-l {
+    border-left: 1px solid var(--ink);
+  }
+  .crop-r {
+    border-right: 1px solid var(--ink);
+  }
+</style>
