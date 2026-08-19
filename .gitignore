@@ -1,11 +1,5 @@
-# build output
-dist/
-
-# dependencies
+# dependencies (only present if a local static server is installed)
 node_modules/
-
-# generated types
-.astro/
 
 # environment
 .env

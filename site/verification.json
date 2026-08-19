@@ -1,0 +1,47 @@
+{
+  "last_verified": "2026-08-19",
+  "method": "Unauthenticated GitHub API for star counts; source-level count of #[test] and #[tokio::test] functions for test totals (no doctests present in either repo, so cargo's reported totals match); HN Algolia API for the Show HN check.",
+  "repos": {
+    "mnemo": {
+      "url": "https://github.com/zaydmulani09/mnemo",
+      "stars": 237,
+      "tests": 122,
+      "hacker_news": "Show HN reached 60 points (front page)",
+      "status": "Stable"
+    },
+    "mcp-gateway": {
+      "url": "https://github.com/zaydmulani09/mcp-gateway",
+      "features_verified": ["routing", "auth", "rate limiting", "request logging"],
+      "note": "Single v0.1.0 tag, no published GitHub Releases; 'versioned releases' chip removed in favor of the verified 'request logging' feature.",
+      "status": "Active"
+    },
+    "agentwatch": {
+      "url": "https://github.com/zaydmulani09/agentwatch",
+      "stars": 0,
+      "features_verified": ["Ratatui TUI", "SQLite (rusqlite)", "local proxy (hyper)"],
+      "status": "Active"
+    },
+    "phaedra": {
+      "url": "https://github.com/zaydmulani09/phaedra",
+      "stars": 13,
+      "tests": 161,
+      "note": "Brief claimed 163 tests; the repository source contains 161 (#[test] + #[tokio::test]) across the workspace. Corrected to 161.",
+      "status": "Active"
+    },
+    "ghost": {
+      "url": "https://github.com/zaydmulani09/ghost",
+      "stars": 0,
+      "status": "Active"
+    },
+    "fluid": {
+      "url": "https://github.com/zaydmulani09/fluid",
+      "stars": 0,
+      "status": "Active"
+    },
+    "vecdb": {
+      "url": "https://github.com/zaydmulani09/vecdb",
+      "stars": 10,
+      "status": "Active"
+    }
+  }
+}
