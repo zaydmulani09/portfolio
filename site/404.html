@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 — Not found · Zayd Mulani</title>
+  <meta name="description" content="That page could not be found.">
+  <meta name="theme-color" content="#f1ede4">
+  <meta name="robots" content="noindex,follow">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .error-main{max-width:var(--max);margin:auto;padding:120px 28px;min-height:70vh;display:flex;align-items:center}
+    .error-block{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 40px}
+    .error-index{color:var(--signal);padding-top:12px}
+    .error-code{font-size:clamp(80px,16vw,220px);line-height:.9;letter-spacing:-.07em;font-weight:600;margin:0}
+    .error-code em{font-family:Georgia,serif;font-style:italic;font-weight:400;color:var(--blue);letter-spacing:-.05em}
+    .error-lead{font-size:clamp(20px,2.4vw,26px);line-height:1.35;max-width:520px;margin:34px 0 40px}
+    .error-actions{display:flex;flex-wrap:wrap;gap:14px 34px;align-items:center;border-top:1px solid var(--rule);padding-top:26px}
+    .error-actions a{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:5px}
+    .error-actions a span{color:var(--signal);margin-left:5px}
+    @media(max-width:640px){
+      .error-main{padding:80px 18px}
+      .error-block{grid-template-columns:1fr}
+      .error-index{display:none}
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="wordmark" href="/" aria-label="Zayd Mulani home">ZM<span>/26</span></a>
+    <nav aria-label="Primary navigation">
+      <a href="/#work">Work</a>
+      <a href="/#about">About</a>
+      <a href="/#colophon">Colophon</a>
+    </nav>
+    <a class="header-contact" href="mailto:zaydmulani@gmail.com">Contact <span>↗</span></a>
+  </div>
+</header>
+
+<main id="main" class="error-main">
+  <div class="error-block">
+    <div class="error-index mono">ERR — 404</div>
+    <div>
+      <h1 class="error-code">Not<br><em>found.</em></h1>
+      <p class="error-lead">That page does not exist, or it moved. Everything worth inspecting is one click from the front page.</p>
+      <div class="error-actions">
+        <a href="/">Back to the front page <span>↗</span></a>
+        <a href="https://github.com/zaydmulani09" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div>© 2026 Zayd Mulani</div>
+  <a href="/#colophon">Colophon ↗</a>
+</footer>
+</body>
+</html>
