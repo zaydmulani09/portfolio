@@ -1,0 +1,490 @@
+{
+  "_readme": "Offline snapshot so `node build/build.mjs --fixture` renders without network. Used for local preview and layout checks. Never deployed: CI always runs against the live APIs.",
+  "repos": [
+    {
+      "name": "xorcery",
+      "description": "Your GPU rediscovers bit hacks: a WebGPU superoptimizer that finds the shortest branchless program for any function of 32-bit words",
+      "language": "TypeScript",
+      "stars": 4,
+      "forks": 0,
+      "pushedAt": "2026-09-12T18:07:30Z",
+      "url": "https://github.com/zaydmulani09/xorcery",
+      "license": "MIT",
+      "topics": [
+        "craft",
+        "webgpu"
+      ],
+      "createdAt": "2026-09-12T18:07:30Z"
+    },
+    {
+      "name": "mnemo",
+      "description": "Local-first AI memory layer for any LLM.",
+      "language": "Rust",
+      "stars": 236,
+      "forks": 10,
+      "pushedAt": "2026-09-02T11:20:00Z",
+      "url": "https://github.com/zaydmulani09/mnemo",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-09-02T11:20:00Z"
+    },
+    {
+      "name": "phaedra",
+      "description": "Local-first, LLM-guided, coverage-driven fuzzer for network protocols and binary formats.",
+      "language": "Rust",
+      "stars": 15,
+      "forks": 3,
+      "pushedAt": "2026-08-30T09:02:00Z",
+      "url": "https://github.com/zaydmulani09/phaedra",
+      "license": "Apache-2.0",
+      "topics": [],
+      "createdAt": "2026-08-30T09:02:00Z"
+    },
+    {
+      "name": "slimeroute",
+      "description": "A brainless slime mold designs your transit network, live, on your GPU.",
+      "language": "TypeScript",
+      "stars": 2,
+      "forks": 0,
+      "pushedAt": "2026-09-11T22:31:00Z",
+      "url": "https://github.com/zaydmulani09/slimeroute",
+      "license": null,
+      "topics": [],
+      "createdAt": "2026-09-11T22:31:00Z"
+    },
+    {
+      "name": "seewifi",
+      "description": "Wi-Fi coverage you can see in the browser.",
+      "language": "TypeScript",
+      "stars": 1,
+      "forks": 0,
+      "pushedAt": "2026-09-10T14:12:00Z",
+      "url": "https://github.com/zaydmulani09/seewifi",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-09-10T14:12:00Z"
+    },
+    {
+      "name": "quivercam",
+      "description": "Your webcam can see your heartbeat.",
+      "language": "TypeScript",
+      "stars": 0,
+      "forks": 0,
+      "pushedAt": "2026-09-09T03:44:00Z",
+      "url": "https://github.com/zaydmulani09/quivercam",
+      "license": null,
+      "topics": [],
+      "createdAt": "2026-09-09T03:44:00Z"
+    },
+    {
+      "name": "vecdb",
+      "description": "Local-first hybrid vector database. HNSW + BM25 + fusion search.",
+      "language": "Rust",
+      "stars": 10,
+      "forks": 1,
+      "pushedAt": "2026-07-18T16:40:00Z",
+      "url": "https://github.com/zaydmulani09/vecdb",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-07-18T16:40:00Z"
+    },
+    {
+      "name": "mcp-gateway",
+      "description": "Self-hosted MCP server gateway.",
+      "language": "Rust",
+      "stars": 1,
+      "forks": 0,
+      "pushedAt": "2026-06-21T08:15:00Z",
+      "url": "https://github.com/zaydmulani09/mcp-gateway",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-06-21T08:15:00Z"
+    },
+    {
+      "name": "agentwatch",
+      "description": "Local-first token cost tracker for AI coding agents.",
+      "language": "Rust",
+      "stars": 1,
+      "forks": 0,
+      "pushedAt": "2026-06-02T19:55:00Z",
+      "url": "https://github.com/zaydmulani09/agentwatch",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-06-02T19:55:00Z"
+    },
+    {
+      "name": "depgraph",
+      "description": "Open-source dependency intelligence platform for npm, PyPI, and Cargo.",
+      "language": "TypeScript",
+      "stars": 3,
+      "forks": 0,
+      "pushedAt": "2026-05-29T12:00:00Z",
+      "url": "https://github.com/zaydmulani09/depgraph",
+      "license": "MIT",
+      "topics": [],
+      "createdAt": "2026-05-29T12:00:00Z"
+    },
+    {
+      "name": "driftcheck",
+      "description": "Scans public LangChain tutorial repos for imports broken by LangChain 1.0.",
+      "language": "Python",
+      "stars": 6,
+      "forks": 0,
+      "pushedAt": "2026-08-13T19:34:00Z",
+      "url": "https://github.com/zaydmulani09/driftcheck",
+      "license": "MIT",
+      "topics": [
+        "craft",
+        "python"
+      ],
+      "createdAt": "2026-08-13T19:34:00Z"
+    },
+    {
+      "name": "ghost",
+      "description": "A local LLM that runs entirely in your browser. One HTML file.",
+      "language": "HTML",
+      "stars": 8,
+      "forks": 1,
+      "pushedAt": "2026-04-11T10:10:00Z",
+      "url": "https://github.com/zaydmulani09/ghost",
+      "license": "MIT",
+      "topics": [
+        "craft",
+        "webgpu"
+      ],
+      "createdAt": "2026-04-11T10:10:00Z"
+    },
+    {
+      "name": "autofile",
+      "description": "Bulk rename and organise files in the browser. Nothing uploads.",
+      "language": "TypeScript",
+      "stars": 1,
+      "forks": 0,
+      "pushedAt": "2026-07-02T10:00:00Z",
+      "createdAt": "2026-06-28T10:00:00Z",
+      "url": "https://github.com/zaydmulani09/autofile",
+      "license": "MIT",
+      "topics": [
+        "craft"
+      ]
+    }
+  ],
+  "detail": {
+    "mnemo": {
+      "release": {
+        "tag": "v0.4.0",
+        "publishedAt": "2026-08-28T10:00:00Z",
+        "url": "https://github.com/zaydmulani09/mnemo/releases/tag/v0.4.0"
+      },
+      "head": {
+        "sha": "a91c2f4",
+        "message": "graph: weight multi-hop edges by recency, not just hit count",
+        "date": "2026-09-02T11:20:00Z",
+        "url": "https://github.com/zaydmulani09/mnemo"
+      }
+    },
+    "phaedra": {
+      "release": null,
+      "head": {
+        "sha": "3e77b10",
+        "message": "triage: dedupe crashes by minimized stack hash",
+        "date": "2026-08-30T09:02:00Z",
+        "url": "https://github.com/zaydmulani09/phaedra"
+      }
+    },
+    "mcp-gateway": {
+      "release": null,
+      "head": {
+        "sha": "d40aa8c",
+        "message": "auth: per-server token scoping",
+        "date": "2026-06-21T08:15:00Z",
+        "url": "https://github.com/zaydmulani09/mcp-gateway"
+      }
+    },
+    "agentwatch": {
+      "release": null,
+      "head": {
+        "sha": "7b1e903",
+        "message": "tui: session cost column sorts by burn rate",
+        "date": "2026-06-02T19:55:00Z",
+        "url": "https://github.com/zaydmulani09/agentwatch"
+      }
+    },
+    "vecdb": {
+      "release": {
+        "tag": "v0.1.2",
+        "publishedAt": "2026-07-15T00:00:00Z",
+        "url": "https://github.com/zaydmulani09/vecdb/releases/tag/v0.1.2"
+      },
+      "head": {
+        "sha": "c02f5aa",
+        "message": "fusion: reciprocal rank fusion replaces the linear blend",
+        "date": "2026-07-18T16:40:00Z",
+        "url": "https://github.com/zaydmulani09/vecdb"
+      }
+    },
+    "xorcery": {
+      "release": null,
+      "head": {
+        "sha": "5249a01",
+        "message": "meta: package keywords/homepage; about text mentions the CLI",
+        "date": "2026-09-12T18:07:30Z",
+        "url": "https://github.com/zaydmulani09/xorcery"
+      }
+    }
+  },
+  "crates": {
+    "mnemo-api": {
+      "name": "mnemo-api",
+      "downloads": 4821,
+      "recentDownloads": 610,
+      "version": "0.4.0",
+      "url": "https://crates.io/crates/mnemo-api"
+    }
+  },
+  "projects": [
+    {
+      "name": "xorcery",
+      "repo": "xorcery",
+      "repoUrl": "https://github.com/zaydmulani09/xorcery",
+      "url": "https://xorcery.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-09-12T18:07:30Z",
+      "commit": "meta: package keywords/homepage"
+    },
+    {
+      "name": "slimeroute",
+      "repo": "slimeroute",
+      "repoUrl": "https://github.com/zaydmulani09/slimeroute",
+      "url": "https://slimeroute.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-09-11T22:31:00Z",
+      "commit": "routing pass"
+    },
+    {
+      "name": "seewifi",
+      "repo": "seewifi",
+      "repoUrl": "https://github.com/zaydmulani09/seewifi",
+      "url": "https://seewifi.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-09-10T14:12:00Z",
+      "commit": "heatmap"
+    },
+    {
+      "name": "quivercam",
+      "repo": "quivercam",
+      "repoUrl": "https://github.com/zaydmulani09/quivercam",
+      "url": "https://quivercam.vercel.app",
+      "state": "ERROR",
+      "deployedAt": "2026-09-09T03:44:00Z",
+      "commit": "wip"
+    },
+    {
+      "name": "p4c",
+      "repo": "p4c",
+      "repoUrl": "https://github.com/zaydmulani09/p4c",
+      "url": "https://p4c.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-08-20T12:00:00Z",
+      "commit": "portal"
+    },
+    {
+      "name": "datatrace",
+      "repo": "Data-Trace",
+      "repoUrl": "https://github.com/zaydmulani09/Data-Trace",
+      "url": "https://datatrace.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-03-01T12:00:00Z",
+      "commit": "init"
+    },
+    {
+      "name": "outreach-engine",
+      "repo": "outreach-engine",
+      "repoUrl": "https://github.com/zaydmulani09/outreach-engine",
+      "url": "https://outreach-engine.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-05-02T12:00:00Z",
+      "commit": "tracker"
+    },
+    {
+      "name": "jalgiai",
+      "repo": "jalgi-ai-humanizer",
+      "repoUrl": "https://github.com/zaydmulani09/jalgi-ai-humanizer",
+      "url": "https://jalgiai.vercel.app",
+      "state": "READY",
+      "deployedAt": "2026-02-14T12:00:00Z",
+      "commit": "init"
+    }
+  ],
+  "posts": [
+    {
+      "title": "I built a local-first hybrid vector database in Rust from scratch",
+      "url": "https://dev.to/zaydmulani09/i-built-a-local-first-hybrid-vector-database-in-rust-from-scratch-3fd3",
+      "publishedAt": "2026-05-19T00:00:00Z",
+      "reactions": 14,
+      "comments": 3,
+      "readingMinutes": 9
+    },
+    {
+      "title": "I built an open-source dependency intelligence platform in TypeScript",
+      "url": "https://dev.to/zaydmulani09/i-built-an-open-source-dependency-intelligence-platform-in-typescript-heres-how-it-works-1ofi",
+      "publishedAt": "2026-05-29T00:00:00Z",
+      "reactions": 9,
+      "comments": 1,
+      "readingMinutes": 7
+    },
+    {
+      "title": "My \"secure\" sandbox detected an attack and reported success anyway",
+      "url": "https://dev.to/zaydmulani09",
+      "publishedAt": "2026-06-14T00:00:00Z",
+      "reactions": 21,
+      "comments": 5,
+      "readingMinutes": 6
+    }
+  ],
+  "hn": [
+    {
+      "title": "Show HN: Mnemo, a local-first AI memory layer for any LLM",
+      "points": 60,
+      "comments": 18,
+      "createdAt": "2026-05-24T14:02:00Z",
+      "url": "https://news.ycombinator.com/item?id=40000000",
+      "target": "https://github.com/zaydmulani09/mnemo"
+    }
+  ],
+  "taglines": {
+    "slimeroute": "A brainless slime mold designs your transit network, live, on your GPU.",
+    "quivercam": "Your webcam can see your heartbeat."
+  },
+  "pulse": {
+    "series": [
+      {
+        "day": "2026-08-15",
+        "pushes": 2
+      },
+      {
+        "day": "2026-08-16",
+        "pushes": 1
+      },
+      {
+        "day": "2026-08-17",
+        "pushes": 2
+      },
+      {
+        "day": "2026-08-18",
+        "pushes": 1
+      },
+      {
+        "day": "2026-08-19",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-20",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-21",
+        "pushes": 1
+      },
+      {
+        "day": "2026-08-22",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-23",
+        "pushes": 2
+      },
+      {
+        "day": "2026-08-24",
+        "pushes": 3
+      },
+      {
+        "day": "2026-08-25",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-26",
+        "pushes": 1
+      },
+      {
+        "day": "2026-08-27",
+        "pushes": 1
+      },
+      {
+        "day": "2026-08-28",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-29",
+        "pushes": 0
+      },
+      {
+        "day": "2026-08-30",
+        "pushes": 2
+      },
+      {
+        "day": "2026-08-31",
+        "pushes": 2
+      },
+      {
+        "day": "2026-09-01",
+        "pushes": 0
+      },
+      {
+        "day": "2026-09-02",
+        "pushes": 1
+      },
+      {
+        "day": "2026-09-03",
+        "pushes": 0
+      },
+      {
+        "day": "2026-09-04",
+        "pushes": 1
+      },
+      {
+        "day": "2026-09-05",
+        "pushes": 2
+      },
+      {
+        "day": "2026-09-06",
+        "pushes": 0
+      },
+      {
+        "day": "2026-09-07",
+        "pushes": 3
+      },
+      {
+        "day": "2026-09-08",
+        "pushes": 0
+      },
+      {
+        "day": "2026-09-09",
+        "pushes": 1
+      },
+      {
+        "day": "2026-09-10",
+        "pushes": 1
+      },
+      {
+        "day": "2026-09-11",
+        "pushes": 1
+      },
+      {
+        "day": "2026-09-12",
+        "pushes": 3
+      },
+      {
+        "day": "2026-09-13",
+        "pushes": 0
+      }
+    ],
+    "newest": {
+      "message": "meta: package keywords/homepage; about text mentions the CLI",
+      "repo": "xorcery",
+      "at": "2026-09-12T18:07:30Z"
+    },
+    "total": 31,
+    "days": 30
+  }
+}
