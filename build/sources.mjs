@@ -259,6 +259,7 @@ export async function activity(user, token, days = 30) {
 
   const events = [];
   let exhausted = false; // the API ran out of events before the window did
+  const pages = [];
   for (let page = 1; page <= 3; page++) {
     const batch = await json(`https://api.github.com/users/${user}/events/public?per_page=100&page=${page}`, {
       headers,
@@ -268,10 +269,20 @@ export async function activity(user, token, days = 30) {
       if (page === 1) return null;
       break;
     }
+    pages.push(batch.length);
     events.push(...batch);
+    // A short page means the feed ended. An empty page after a full one does
+    // not: the feed sometimes serves that, and the days it would have covered
+    // are unknown rather than quiet.
+    if (batch.length === 0) break;
     if (batch.length < 100) exhausted = true;
     if (exhausted || +new Date(batch[batch.length - 1].created_at) < cutoff) break;
   }
+  console.log(
+    `  events: ${events.length} over ${pages.length} page(s) [${pages.join(', ')}], oldest ${
+      events.length ? events[events.length - 1].created_at.slice(0, 10) : 'none'
+    }, ${exhausted ? 'feed exhausted' : 'feed not exhausted'}`,
+  );
 
   // If the cap cut the feed off inside the window, the days before the oldest
   // event are unknown, not quiet. Shorten the window to what was actually
