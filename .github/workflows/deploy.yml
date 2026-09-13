@@ -1,8 +1,12 @@
-name: Deploy to GitHub Pages
+name: Build and deploy
 
 on:
   push:
     branches: [main]
+  schedule:
+    # Every 6 hours. The page shows live stars, deploy state, and last-push
+    # dates, so it goes stale on its own even when nothing here changes.
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -10,7 +14,6 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment; don't cancel an in-progress run.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -22,19 +25,28 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      # Plain static site: no build step. Publish the site/ directory as-is.
-      # site/CNAME carries the custom domain (zayd.dpdns.org) into the artifact root.
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/setup-node@v4
         with:
-          path: ./site
+          node-version: '22'
 
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - name: Build
+        env:
+          # Supplied by Actions automatically. Raises the GitHub API limit
+          # from 60 requests an hour to 5000.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Repo secret. If it is missing the build still succeeds and the
+          # live table says so on the page instead of going blank.
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+        run: node build/build.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - id: deployment
         uses: actions/deploy-pages@v4
