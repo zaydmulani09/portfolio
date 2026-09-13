@@ -12,7 +12,9 @@ export const fetched = [];
 // releases 404s on /releases/latest, and a crate that was never published 404s
 // on crates.io. Neither makes the page stale, so neither is recorded as an
 // error; the caller just gets null.
-async function json(url, { headers = {}, label, absentOk = false } = {}) {
+// `quiet`: a first attempt the caller will retry another way. A failure is
+// returned as null and not recorded, so only the retry can mark the page stale.
+async function json(url, { headers = {}, label, absentOk = false, quiet = false } = {}) {
   const name = label || new URL(url).host;
   try {
     const res = await fetch(url, {
@@ -25,7 +27,7 @@ async function json(url, { headers = {}, label, absentOk = false } = {}) {
     fetched.push(name);
     return body;
   } catch (err) {
-    errors.push({ source: name, url, error: String(err.message || err) });
+    if (!quiet) errors.push({ source: name, url, error: String(err.message || err) });
     return null;
   }
 }
@@ -257,14 +259,26 @@ export async function activity(user, token, days = 30) {
   const headers = token ? { authorization: `Bearer ${token}` } : {};
   const cutoff = Date.now() - days * 86400000;
 
+  // The feed is public, so the token only buys rate limit, and the token
+  // Actions hands out actually sees less: one short page ending weeks early,
+  // where an unauthenticated call returns all three. So ask without the token
+  // first, and only fall back to it if the shared runner IP is rate-limited.
+  let auth = false;
+  const eventsPage = async (page) => {
+    const url = `https://api.github.com/users/${user}/events/public?per_page=100&page=${page}`;
+    if (!auth) {
+      const open = await json(url, { label: 'github:events', quiet: Boolean(token) });
+      if (Array.isArray(open) || !token) return open;
+      auth = true;
+    }
+    return json(url, { headers, label: 'github:events' });
+  };
+
   const events = [];
   let exhausted = false; // the API ran out of events before the window did
   const pages = [];
   for (let page = 1; page <= 3; page++) {
-    const batch = await json(`https://api.github.com/users/${user}/events/public?per_page=100&page=${page}`, {
-      headers,
-      label: 'github:events',
-    });
+    const batch = await eventsPage(page);
     if (!Array.isArray(batch)) {
       if (page === 1) return null;
       break;
@@ -281,7 +295,7 @@ export async function activity(user, token, days = 30) {
   console.log(
     `  events: ${events.length} over ${pages.length} page(s) [${pages.join(', ')}], oldest ${
       events.length ? events[events.length - 1].created_at.slice(0, 10) : 'none'
-    }, ${exhausted ? 'feed exhausted' : 'feed not exhausted'}`,
+    }, ${exhausted ? 'feed exhausted' : 'feed not exhausted'}, ${auth ? 'with token' : 'without token'}`,
   );
 
   // If the cap cut the feed off inside the window, the days before the oldest
