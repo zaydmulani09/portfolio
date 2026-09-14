@@ -14,10 +14,12 @@ export const fetched = [];
 // error; the caller just gets null.
 // `quiet`: a first attempt the caller will retry another way. A failure is
 // returned as null and not recorded, so only the retry can mark the page stale.
-async function json(url, { headers = {}, label, absentOk = false, quiet = false } = {}) {
+async function json(url, { headers = {}, label, absentOk = false, quiet = false, method = 'GET', payload } = {}) {
   const name = label || new URL(url).host;
   try {
     const res = await fetch(url, {
+      method,
+      body: payload,
       headers: { 'user-agent': UA, accept: 'application/json', ...headers },
       signal: AbortSignal.timeout(20000),
     });
@@ -246,26 +248,68 @@ export async function readmeLines(user, repos, token) {
 
 /* ------------------------------------------------------ recent activity */
 
-// A month of public activity, used for the pulse strip and for the newest
-// commit message, quoted exactly as written. Unpolished commit messages are
-// the point.
+// A month of activity, one bar a day, plus whatever I last typed into a commit
+// message, quoted exactly as written. Unpolished commit messages are the point.
 //
-// The events API counts pushes, not commits: a PushEvent payload is now just
-// `{ repository_id, push_id, ref, head, before }`, with no commit list, so the
-// strip is one push, one tick. The message comes from one more call for the
-// head of the newest push. Events page at 100 and stop at 300 or 90 days, so
-// a busy month needs up to three pages to cover 30 days.
-export async function activity(user, token, days = 30) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  const cutoff = Date.now() - days * 86400000;
+// The bars are the same numbers as the contribution graph on the GitHub
+// profile: GraphQL contributionsCollection, commits per day by author date,
+// across every repo, including work that was pushed weeks later from a repo
+// that was private at the time. That is what a visitor will compare against.
+//
+// The public events feed is only the fallback, and it is a much worse witness.
+// It counts pushes, not commits (a PushEvent payload is now just
+// `{ repository_id, push_id, ref, head, before }`), it never shows pushes to a
+// repo that was private when they happened, and the token Actions hands out
+// sees one short page of it. The strip says which unit it is showing, so a
+// fallback build says "pushes" and never dresses them up as commits.
 
-  // The feed is public, so the token only buys rate limit, and the token
-  // Actions hands out actually sees less: one short page ending weeks early,
-  // where an unauthenticated call returns all three. So ask without the token
-  // first, and only fall back to it if the shared runner IP is rate-limited.
+// GraphQL refuses unauthenticated calls, so this needs a token. Quiet: if it
+// fails, the events feed answers instead, and only that failure is a stale page.
+async function contributions(user, token, from, to) {
+  if (!token) return null;
+  const query = `query($user: String!, $from: DateTime!, $to: DateTime!) {
+    user(login: $user) {
+      contributionsCollection(from: $from, to: $to) {
+        commitContributionsByRepository(maxRepositories: 100) {
+          contributions(first: 100) { nodes { occurredAt commitCount } }
+        }
+      }
+    }
+  }`;
+  const body = await json('https://api.github.com/graphql', {
+    method: 'POST',
+    payload: JSON.stringify({ query, variables: { user, from: new Date(from).toISOString(), to: new Date(to).toISOString() } }),
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    label: 'github:contributions',
+    quiet: true,
+  });
+  const repos = body?.data?.user?.contributionsCollection?.commitContributionsByRepository;
+  if (!Array.isArray(repos)) {
+    const why = body?.errors?.map((e) => e.message).join('; ') || 'no response';
+    console.log(`  contributions: unavailable (${why}), falling back to the events feed`);
+    return null;
+  }
+  const byDay = new Map();
+  for (const r of repos) {
+    for (const c of r.contributions?.nodes || []) {
+      const day = c.occurredAt.slice(0, 10);
+      byDay.set(day, (byDay.get(day) || 0) + c.commitCount);
+    }
+  }
+  console.log(`  contributions: ${[...byDay.values()].reduce((a, b) => a + b, 0)} commits across ${repos.length} repos`);
+  return byDay;
+}
+
+// The feed is public, so the token only buys rate limit, and the token Actions
+// hands out actually sees less: one short page ending weeks early, where an
+// unauthenticated call returns all three. So ask without the token first, and
+// only fall back to it if the shared runner IP is rate-limited. Pages are 100
+// events, capped at 300 or 90 days.
+async function publicEvents(user, token, cutoff, maxPages) {
+  const headers = token ? { authorization: `Bearer ${token}` } : {};
   let auth = false;
-  const eventsPage = async (page) => {
-    const url = `https://api.github.com/users/${user}/events/public?per_page=100&page=${page}`;
+  const page = async (n) => {
+    const url = `https://api.github.com/users/${user}/events/public?per_page=100&page=${n}`;
     if (!auth) {
       const open = await json(url, { label: 'github:events', quiet: Boolean(token) });
       if (Array.isArray(open) || !token) return open;
@@ -277,10 +321,10 @@ export async function activity(user, token, days = 30) {
   const events = [];
   let exhausted = false; // the API ran out of events before the window did
   const pages = [];
-  for (let page = 1; page <= 3; page++) {
-    const batch = await eventsPage(page);
+  for (let n = 1; n <= maxPages; n++) {
+    const batch = await page(n);
     if (!Array.isArray(batch)) {
-      if (page === 1) return null;
+      if (n === 1) return null;
       break;
     }
     pages.push(batch.length);
@@ -297,35 +341,53 @@ export async function activity(user, token, days = 30) {
       events.length ? events[events.length - 1].created_at.slice(0, 10) : 'none'
     }, ${exhausted ? 'feed exhausted' : 'feed not exhausted'}, ${auth ? 'with token' : 'without token'}`,
   );
+  return { events, exhausted };
+}
 
-  // If the cap cut the feed off inside the window, the days before the oldest
-  // event are unknown, not quiet. Shorten the window to what was actually
-  // seen rather than draw empty days that may not have been.
+export async function activity(user, token, days = 30) {
+  const headers = token ? { authorization: `Bearer ${token}` } : {};
+
+  // The last `days` complete UTC days, ending yesterday. Today is only part of
+  // a day and would read as quiet every morning.
+  const now = new Date();
+  const todayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const cutoff = todayStart - days * 86400000;
+
+  const commits = await contributions(user, token, cutoff, todayStart - 1);
+
+  // With the graph in hand the feed only has to supply the newest push, which
+  // is on the first page. Without it the feed is the series too, and needs
+  // every page inside the window.
+  const feed = await publicEvents(user, token, cutoff, commits ? 1 : 3);
+  if (!commits && !feed) return null;
+  const events = feed?.events || [];
+
+  let unit = 'commit';
+  let byDay = commits;
   let start = cutoff;
-  const oldest = events.length ? +new Date(events[events.length - 1].created_at) : null;
-  if (!exhausted && oldest !== null && oldest > cutoff) start = oldest;
-
-  const byDay = new Map();
-  let head = null;
-
-  for (const e of events) {
-    if (e.type !== 'PushEvent') continue;
-    const at = new Date(e.created_at);
-    if (+at < cutoff) continue;
-
-    const day = at.toISOString().slice(0, 10);
-    byDay.set(day, (byDay.get(day) || 0) + 1);
-
-    // Events arrive newest first, so the first push seen is the newest.
-    if (!head && e.payload?.head && e.repo?.name) head = { sha: e.payload.head, repo: e.repo.name, at };
+  if (!byDay) {
+    unit = 'push';
+    byDay = new Map();
+    for (const e of events) {
+      if (e.type !== 'PushEvent' || +new Date(e.created_at) < cutoff) continue;
+      const day = new Date(e.created_at).toISOString().slice(0, 10);
+      byDay.set(day, (byDay.get(day) || 0) + 1);
+    }
+    // If the cap cut the feed off inside the window, the days before the
+    // oldest event are unknown, not quiet. Shorten the window to what was
+    // actually seen rather than draw empty days that may not have been.
+    const oldest = events.length ? +new Date(events[events.length - 1].created_at) : null;
+    if (!feed.exhausted && oldest !== null && oldest > cutoff) start = oldest;
   }
 
+  // Events arrive newest first, so the first push seen is the newest.
+  const push = events.find((e) => e.type === 'PushEvent' && e.payload?.head && e.repo?.name);
   let newest = null;
-  if (head) {
+  if (push) {
     // 404 here means the commit was force-pushed away since. Then there is no
     // message to quote, and the line is left out rather than the page marked
     // stale.
-    const commit = await json(`https://api.github.com/repos/${head.repo}/commits/${head.sha}`, {
+    const commit = await json(`https://api.github.com/repos/${push.repo.name}/commits/${push.payload.head}`, {
       headers,
       label: 'github:commit:newest',
       absentOk: true,
@@ -333,23 +395,22 @@ export async function activity(user, token, days = 30) {
     if (commit?.commit?.message) {
       newest = {
         message: undash(commit.commit.message.split('\n')[0]),
-        repo: head.repo.split('/')[1] || '',
-        at: head.at.toISOString(),
+        repo: push.repo.name.split('/')[1] || '',
+        at: new Date(push.created_at).toISOString(),
       };
     }
   }
 
   // Fill the gaps so quiet days read as quiet rather than disappearing.
   const series = [];
-  const today = new Date().toISOString().slice(0, 10);
   const first = new Date(start).toISOString().slice(0, 10);
-  for (let i = days - 1; i >= 0; i--) {
-    const day = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
-    if (day < first || day > today) continue;
-    series.push({ day, pushes: byDay.get(day) || 0 });
+  for (let i = days; i >= 1; i--) {
+    const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
+    if (day < first) continue;
+    series.push({ day, count: byDay.get(day) || 0 });
   }
 
-  return { series, newest, total: series.reduce((a, b) => a + b.pushes, 0), days: series.length };
+  return { series, unit, newest, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
 }
 
 /* ------------------------------------------------- hacker news (algolia) */

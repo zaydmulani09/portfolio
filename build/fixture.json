@@ -360,123 +360,123 @@
     "series": [
       {
         "day": "2026-08-15",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-08-16",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-08-17",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-08-18",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-08-19",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-20",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-21",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-08-22",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-23",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-08-24",
-        "pushes": 3
+        "count": 21
       },
       {
         "day": "2026-08-25",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-26",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-08-27",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-08-28",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-29",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-08-30",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-08-31",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-09-01",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-09-02",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-09-03",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-09-04",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-09-05",
-        "pushes": 2
+        "count": 14
       },
       {
         "day": "2026-09-06",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-09-07",
-        "pushes": 3
+        "count": 21
       },
       {
         "day": "2026-09-08",
-        "pushes": 0
+        "count": 0
       },
       {
         "day": "2026-09-09",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-09-10",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-09-11",
-        "pushes": 1
+        "count": 7
       },
       {
         "day": "2026-09-12",
-        "pushes": 3
+        "count": 21
       },
       {
         "day": "2026-09-13",
-        "pushes": 0
+        "count": 0
       }
     ],
     "newest": {
@@ -484,7 +484,8 @@
       "repo": "xorcery",
       "at": "2026-09-12T18:07:30Z"
     },
-    "total": 31,
-    "days": 30
+    "total": 217,
+    "days": 30,
+    "unit": "commit"
   }
 }

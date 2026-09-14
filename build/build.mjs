@@ -96,7 +96,7 @@ async function main() {
     await Promise.all(fontFiles.map(async (f) => (await stat(join(dist, 'fonts', `${f}.woff2`))).size))
   ).reduce((a, b) => a + b, 0);
 
-  const named = ['github:repos', 'github:events', 'vercel:projects', 'devto:articles', 'hn:search'];
+  const named = ['github:repos', 'github:contributions', 'github:events', 'vercel:projects', 'devto:articles', 'hn:search'];
   const meta = {
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA?.slice(0, 7) || 'local',

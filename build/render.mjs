@@ -94,34 +94,37 @@ export function craftPage(c, data) {
 
 /* ----------------------------------------------------------------- pulse */
 
-// A month of pushes, one bar a day, plus whatever I last typed into a commit
+// A month of commits, one bar a day, plus whatever I last typed into a commit
 // message. It is not a metric anybody should be impressed by. It is just what
-// the last month actually looked like, including the empty days. The API
-// counts pushes, not commits, and so does this.
+// the last month actually looked like, including the empty days. The unit
+// comes from the source: commits from the contribution graph, or pushes when
+// the build had to fall back to the events feed. The copy never upgrades one
+// into the other.
 function pulse(p) {
   if (!p?.series?.length) return '';
-  const peak = Math.max(...p.series.map((d) => d.pushes), 1);
-  const pushes = (n) => plural(n, 'push', 'pushes');
+  const peak = Math.max(...p.series.map((d) => d.count), 1);
+  const one = p.unit === 'push' ? 'push' : 'commit';
+  const unit = (n) => plural(n, one, one === 'push' ? 'pushes' : 'commits');
 
   const bars = p.series
     .map((d) => {
-      const h = d.pushes ? Math.max(9, Math.round((d.pushes / peak) * 100)) : 2;
-      const label = d.pushes ? `${pushes(d.pushes)} on ${d.day}` : `nothing on ${d.day}`;
-      return `<span class="tick${d.pushes ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
+      const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
+      const label = d.count ? `${unit(d.count)} on ${d.day}` : `nothing on ${d.day}`;
+      return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
     })
     .join('');
 
-  const quiet = p.series.filter((d) => !d.pushes).length;
+  const quiet = p.series.filter((d) => !d.count).length;
 
   return `
-<aside class="pulse" aria-label="${esc(`Push activity over the last ${plural(p.days, 'day')}`)}">
+<aside class="pulse" aria-label="${esc(`${one === 'push' ? 'Push' : 'Commit'} activity over the last ${plural(p.days, 'day')}`)}">
   <div class="bars" role="img" aria-label="${esc(
-    `${pushes(p.total)} over ${plural(p.days, 'day')}, with ${plural(quiet, 'day')} of nothing`,
+    `${unit(p.total)} over ${plural(p.days, 'day')}, with ${plural(quiet, 'day')} of nothing`,
   )}">${bars}</div>
-  <p class="pulse-read">${esc(pushes(p.total))} in ${esc(plural(p.days, 'day'))}.${
+  <p class="pulse-read">${esc(unit(p.total))} in ${esc(plural(p.days, 'day'))}.${
     quiet
-      ? ` ${esc(plural(quiet, 'day'))} of that I pushed nothing at all.`
-      : ' I pushed something every single day, which is not normal.'
+      ? ` ${esc(plural(quiet, 'day'))} of that I wrote nothing at all.`
+      : ' I wrote something every single day, which is not normal.'
   }</p>
   ${
     p.newest
