@@ -12,6 +12,7 @@
 
 import { readFile, writeFile, mkdir, cp, stat, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import * as src from './sources.mjs';
 import { page, feed, sitemap, archive, craftPage, craftEntries } from './render.mjs';
@@ -91,6 +92,11 @@ async function main() {
   await cp(join(root, 'site'), dist, { recursive: true });
 
   const jsBytes = (await stat(join(dist, 'app.js'))).size;
+
+  // Pages caches every file for ten minutes. A stylesheet URL that changes
+  // with its content means new HTML never meets an old stylesheet.
+  const tag = async (f) => createHash('sha1').update(await readFile(join(dist, f))).digest('hex').slice(0, 8);
+  const assets = { css: `/styles.css?v=${await tag('styles.css')}`, js: `/app.js?v=${await tag('app.js')}` };
   const fontFiles = ['bricolage-700', 'public-sans-400', 'public-sans-600', 'commit-mono-400'];
   const fontBytes = (
     await Promise.all(fontFiles.map(async (f) => (await stat(join(dist, 'fonts', `${f}.woff2`))).size))
@@ -113,17 +119,17 @@ async function main() {
 
   const data = { repos, projects, posts, hn, pulse, detail, crates, taglines };
 
-  const html = page(c, data, meta);
+  const html = page(c, data, meta, assets);
   await writeFile(join(dist, 'index.html'), html);
 
   const hasCraft = repos.some((r) => (r.topics || []).includes(c.craft.topic));
   if (hasCraft) {
     await mkdir(join(dist, 'craft'), { recursive: true });
-    await writeFile(join(dist, 'craft/index.html'), craftPage(c, data));
+    await writeFile(join(dist, 'craft/index.html'), craftPage(c, data, assets));
   }
 
   await mkdir(join(dist, 'archive'), { recursive: true });
-  await writeFile(join(dist, 'archive/index.html'), archive(c, meta));
+  await writeFile(join(dist, 'archive/index.html'), archive(c, meta, assets));
 
   const releases = Object.entries(detail)
     .filter(([, d]) => d?.release)

@@ -29,7 +29,7 @@ function factLine(parts) {
 
 /* ------------------------------------------------------------------ head */
 
-function head(c) {
+function head(c, assets = { css: '/styles.css', js: '/app.js' }) {
   const title = c.identity.name;
   const desc = c.identity.line;
   return `<!doctype html>
@@ -56,7 +56,7 @@ function head(c) {
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/atom+xml" title="Releases" href="/releases.xml">
 <link rel="preload" as="font" type="font/woff2" href="/fonts/public-sans-400.woff2" crossorigin>
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="${esc(assets.css)}">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>`;
@@ -251,7 +251,7 @@ function foot(c, meta) {
 
 /* ------------------------------------------------------------------ page */
 
-export function page(c, data, meta) {
+export function page(c, data, meta, assets) {
   const byRepo = new Map(data.repos.map((r) => [r.name.toLowerCase(), r]));
   const byProject = new Map((data.projects || []).map((p) => [p.name.toLowerCase(), p]));
 
@@ -259,7 +259,7 @@ export function page(c, data, meta) {
   const repoFor = (name) => byRepo.get(String(name).toLowerCase()) || null;
   const hasCraft = craftEntries(c, data.repos).length > 0;
 
-  return `${head(c)}
+  return `${head(c, assets)}
 ${bar(c, hasCraft)}
 <main id="main">
   <div class="intro">
@@ -271,7 +271,7 @@ ${recent(c, data.repos)}
 ${writing(c, data.hn, data.posts)}
 </main>
 ${foot(c, meta)}
-<script src="/app.js" defer></script>
+<script src="${esc(assets.js)}" defer></script>
 </body>
 </html>
 `;
@@ -302,12 +302,12 @@ function craftRow(r, urlFor) {
 </li>`;
 }
 
-export function craftPage(c, data) {
+export function craftPage(c, data, assets) {
   const byProject = new Map((data.projects || []).map((p) => [p.name.toLowerCase(), p]));
   const urlFor = (n) => byProject.get(String(n).toLowerCase())?.url || '';
   const all = craftEntries(c, data.repos);
 
-  return `${head(c).replace('<title>', '<title>Craft, ')}
+  return `${head(c, assets).replace('<title>', '<title>Craft, ')}
 <div class="bar">
   <p class="who">${link('/', c.identity.name)}</p>
   <nav aria-label="Profiles">${link('/', 'back to the front')}</nav>
@@ -328,7 +328,7 @@ export function craftPage(c, data) {
 
 /* --------------------------------------------------------------- archive */
 
-export function archive(c, meta) {
+export function archive(c, meta, assets) {
   const rows = c.version.past
     .map(
       (v) => `
@@ -340,7 +340,7 @@ export function archive(c, meta) {
     )
     .join('');
 
-  return `${head(c).replace('<title>', '<title>Archive, ')}
+  return `${head(c, assets).replace('<title>', '<title>Archive, ')}
 <div class="bar">
   <p class="who">${link('/', c.identity.name)}</p>
   <nav aria-label="Profiles">${link('/', 'back to the current one')}</nav>
