@@ -179,7 +179,7 @@ main { max-width: var(--col); margin: 0 auto; padding: 0 28px; }
   font-size: 19px;
   line-height: 1.6;
 }
-.intro { padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.intro { padding: 28px 0 40px; border-bottom: 1px solid var(--rule); }
 
 .block { padding: 56px 0; }
 .block + .block { border-top: 1px solid var(--rule); }

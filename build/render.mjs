@@ -173,22 +173,9 @@ function head(c) {
 
 /* ------------------------------------------------------------------ hero */
 
-// The frame holds the real deployment, not a recording. If it cannot paint,
-// because there is no GPU, or the project is down, the caption and the link
-// still stand, which is why the caption sits outside the frame.
-function hero(c, urlFor, hasCraft) {
-  const url = urlFor(c.hero.project);
-  const repo = `https://github.com/zaydmulani09/${c.hero.project}`;
-
-  const stage = url
-    ? `<div class="stage" data-src="${esc(url)}" data-title="${esc(c.hero.project)}">
-      <noscript><p class="stage-note">${esc(c.hero.fallback)} ${link(url, 'Open it')}</p></noscript>
-    </div>`
-    : `<div class="stage stage-down"><p class="stage-note">The Vercel API did not answer this build, so the demo is not embedded here. ${link(
-        repo,
-        'The source is here',
-      )}.</p></div>`;
-
+// The top bar: name, profile links, and the h-card. Nothing autoplays on this
+// page; every demo waits for a click.
+function bar(c, hasCraft) {
   return `
 <div class="bar h-card">
   <p class="who"><a class="u-url p-name" href="/" rel="me">${esc(c.identity.name)}</a></p>
@@ -200,15 +187,7 @@ function hero(c, urlFor, hasCraft) {
   <p class="p-note sr-only">${esc(c.identity.line)}</p>
   <span class="p-locality sr-only">${esc(c.identity.location)}</span>
 </div>
-
-<section class="hero">
-  <h1 class="sr-only">${esc(c.identity.name)}</h1>
-  ${stage}
-  <div class="stage-caption">
-    <p>${esc(c.hero.caption)}</p>
-    <p class="actions">${url ? link(url, 'Open it full screen') : ''}${link(repo, 'Read the source')}</p>
-  </div>
-</section>`;
+<h1 class="sr-only">${esc(c.identity.name)}</h1>`;
 }
 
 /* --------------------------------------------------------------- browser */
@@ -220,16 +199,11 @@ function browser(c, urlFor, repoFor) {
       const url = urlFor(b.project);
       const repo = r.url || `https://github.com/zaydmulani09/${b.project}`;
 
-      const isHero = b.project === c.hero.project;
       const run =
-        !isHero && b.embed && url
+        b.embed && url
           ? `<button type="button" class="run" data-src="${esc(url)}" data-title="${esc(b.project)}">Run it here</button>`
           : '';
-      const note = isHero
-        ? `<p class="facts">This is the one running at the top of the page.</p>`
-        : b.embedNote
-          ? `<p class="facts">${esc(b.embedNote)}</p>`
-          : '';
+      const note = b.embedNote ? `<p class="facts">${esc(b.embedNote)}</p>` : '';
 
       return `
 <article class="work" id="${esc(b.project)}">
@@ -410,7 +384,7 @@ export function page(c, data, meta) {
   const repoFor = (name) => byRepo.get(String(name).toLowerCase()) || null;
 
   return `${head(c)}
-${hero(c, urlFor, craftEntries(c, data.repos).length > 0)}
+${bar(c, craftEntries(c, data.repos).length > 0)}
 <main id="main">
   <div class="intro">
     <p>${esc(c.notes[0])}</p>

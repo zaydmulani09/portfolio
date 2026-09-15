@@ -83,11 +83,6 @@
   },
   "recentLimit": 8,
   "dormantAfterDays": 180,
-  "hero": {
-    "project": "slimeroute",
-    "caption": "That is slimeroute, in the frame above. A slime mould crawls across the dish, reinforces the routes it keeps using, starves the rest, and settles into a transit network. The page then scores what it grew against the shortest possible tree.",
-    "fallback": "slimeroute runs a WebGL2 simulation and needs a GPU context this browser will not give it inside a frame. It works on its own page."
-  },
   "browser": [
     {
       "project": "slimeroute",
