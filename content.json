@@ -76,6 +76,7 @@
   ],
   "sections": {
     "projects": "Projects",
+    "recent": "Recently pushed",
     "writing": "Writing"
   },
   "craft": {
@@ -95,5 +96,6 @@
         "note": "Cream paper, terracotta accents, numbered section markers, and a star count I typed by hand that went stale within a week."
       }
     ]
-  }
+  },
+  "recentLimit": 8
 }

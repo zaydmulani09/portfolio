@@ -81,6 +81,71 @@ function bar(c, hasCraft) {
 <h1 class="sr-only">${esc(c.identity.name)}</h1>`;
 }
 
+/* ----------------------------------------------------------------- pulse */
+
+// A month of commits, one bar a day, from the same data as the contribution
+// graph on the GitHub profile, plus the newest commit message as written.
+// The unit comes from the source: commits from the graph, or pushes when the
+// build had to fall back to the events feed. The copy never upgrades one into
+// the other.
+function pulse(p) {
+  if (!p?.series?.length) return '';
+  const peak = Math.max(...p.series.map((d) => d.count), 1);
+  const one = p.unit === 'push' ? 'push' : 'commit';
+  const unit = (n) => plural(n, one, one === 'push' ? 'pushes' : 'commits');
+
+  const bars = p.series
+    .map((d) => {
+      const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
+      const label = d.count ? `${unit(d.count)} on ${d.day}` : `nothing on ${d.day}`;
+      return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
+    })
+    .join('');
+
+  const quiet = p.series.filter((d) => !d.count).length;
+  const read = quiet
+    ? `${unit(p.total)} in the last ${plural(p.days, 'day')}, ${plural(quiet, 'day')} with none.`
+    : `${unit(p.total)} in the last ${plural(p.days, 'day')}, at least one on each.`;
+
+  return `
+<aside class="pulse" aria-label="${esc(`${one === 'push' ? 'Push' : 'Commit'} activity over the last ${plural(p.days, 'day')}`)}">
+  <div class="bars" role="img" aria-label="${esc(read)}">${bars}</div>
+  <p class="pulse-read">${esc(read)}</p>
+  ${
+    p.newest
+      ? `<p class="pulse-last"><span class="dim">Latest commit, in ${esc(p.newest.repo)}, ${when(
+          p.newest.at,
+        )}:</span> <q>${esc(p.newest.message)}</q></p>`
+      : ''
+  }
+</aside>`;
+}
+
+/* ---------------------------------------------------------------- recent */
+
+// The most recently pushed repositories that are not already in the project
+// list, unfinished ones included. Description from GitHub or the README.
+function recent(c, repos) {
+  const listed = new Set(c.projects.map((p) => p.repo));
+  const rows = repos
+    .filter((r) => !listed.has(r.name))
+    .slice(0, c.recentLimit)
+    .map(
+      (r) =>
+        `<li>${link(r.url, r.name)}${r.description ? ` ${esc(r.description)}` : ''} <span class="dim">${
+          r.language ? `${esc(r.language)}, ` : ''
+        }pushed ${when(r.pushedAt)}</span></li>`,
+    )
+    .join('');
+  if (!rows) return '';
+
+  return `
+<section class="block" aria-labelledby="recent-h">
+  <h2 id="recent-h">${esc(c.sections.recent)}</h2>
+  <ul class="loose">${rows}</ul>
+</section>`;
+}
+
 /* -------------------------------------------------------------- projects */
 
 // One list, one entry per project, in the order content.json gives them.
@@ -188,7 +253,9 @@ ${bar(c, hasCraft)}
   <div class="intro">
     ${c.intro.map((p) => `<p>${esc(p)}</p>`).join('\n    ')}
   </div>
+${pulse(data.pulse)}
 ${projects(c, urlFor, repoFor, data.detail, data.crates)}
+${recent(c, data.repos)}
 ${writing(c, data.hn, data.posts)}
 </main>
 ${foot(c, meta)}

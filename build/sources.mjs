@@ -355,10 +355,8 @@ export async function activity(user, token, days = 30) {
 
   const commits = await contributions(user, token, cutoff, todayStart - 1);
 
-  // With the graph in hand the feed only has to supply the newest push, which
-  // is on the first page. Without it the feed is the series too, and needs
-  // every page inside the window.
-  const feed = await publicEvents(user, token, cutoff, commits ? 1 : 3);
+  // The feed is only needed when the graph did not answer.
+  const feed = commits ? null : await publicEvents(user, token, cutoff, 3);
   if (!commits && !feed) return null;
   const events = feed?.events || [];
 
@@ -380,27 +378,6 @@ export async function activity(user, token, days = 30) {
     if (!feed.exhausted && oldest !== null && oldest > cutoff) start = oldest;
   }
 
-  // Events arrive newest first, so the first push seen is the newest.
-  const push = events.find((e) => e.type === 'PushEvent' && e.payload?.head && e.repo?.name);
-  let newest = null;
-  if (push) {
-    // 404 here means the commit was force-pushed away since. Then there is no
-    // message to quote, and the line is left out rather than the page marked
-    // stale.
-    const commit = await json(`https://api.github.com/repos/${push.repo.name}/commits/${push.payload.head}`, {
-      headers,
-      label: 'github:commit:newest',
-      absentOk: true,
-    });
-    if (commit?.commit?.message) {
-      newest = {
-        message: undash(commit.commit.message.split('\n')[0]),
-        repo: push.repo.name.split('/')[1] || '',
-        at: new Date(push.created_at).toISOString(),
-      };
-    }
-  }
-
   // Fill the gaps so quiet days read as quiet rather than disappearing.
   const series = [];
   const first = new Date(start).toISOString().slice(0, 10);
@@ -410,7 +387,25 @@ export async function activity(user, token, days = 30) {
     series.push({ day, count: byDay.get(day) || 0 });
   }
 
-  return { series, unit, newest, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
+  return { series, unit, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
+}
+
+// The newest commit on the most recently pushed repo, quoted as written. The
+// repo list is sorted by push date and is fresh; the events feed lags by hours.
+export async function latestCommit(user, repo, token) {
+  const headers = token ? { authorization: `Bearer ${token}` } : {};
+  const commits = await json(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`, {
+    headers,
+    label: `github:commit:${repo}`,
+  });
+  const head = Array.isArray(commits) ? commits[0] : null;
+  if (!head?.commit?.message) return null;
+  return {
+    message: undash(head.commit.message.split('\n')[0]),
+    repo,
+    at: head.commit.committer?.date || head.commit.author?.date || null,
+    url: head.html_url,
+  };
 }
 
 /* ------------------------------------------------- hacker news (algolia) */

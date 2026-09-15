@@ -264,6 +264,46 @@ h3,
 }
 
 
+/* ------------------------------------------------------------------ pulse */
+
+/* A month of pushes. The empty days are load-bearing, so they get a visible
+   stub rather than nothing at all. */
+.pulse {
+  padding: 40px 0 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 64px;
+  margin-bottom: 16px;
+}
+
+.tick {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--text);
+}
+.tick-none { background: var(--rule); }
+
+.pulse-read { margin: 0; font-size: 16px; color: var(--muted); }
+
+.pulse-last {
+  margin: 10px 0 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.pulse-last q { quotes: '"' '"'; }
+
+@media (max-width: 720px) {
+  .bars { height: 48px; gap: 2px; }
+  h2, .block h1 { font-size: 26px; }
+  .pulse { padding-top: 30px; }
+}
+
 /* ------------------------------------------------------------------ craft */
 
 /* Dated log of small things. Three columns on desktop so the dates line up

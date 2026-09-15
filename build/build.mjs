@@ -33,13 +33,14 @@ async function main() {
   const offline = process.argv.includes('--fixture');
   const fx = offline ? JSON.parse(await readFile(join(root, 'build/fixture.json'), 'utf8')) : null;
 
-  const [repos, projects, posts, hn] = offline
-    ? [fx.repos, fx.projects, fx.posts, fx.hn]
+  const [repos, projects, posts, hn, pulse] = offline
+    ? [fx.repos, fx.projects, fx.posts, fx.hn, fx.pulse]
     : await Promise.all([
         src.github(user, gh),
         src.vercel(process.env.VERCEL_TOKEN, process.env.VERCEL_TEAM_ID),
         src.devto(user),
         src.hackernews(user),
+        src.activity(user, gh),
       ]);
 
   if (!repos) {
@@ -48,6 +49,10 @@ async function main() {
     console.error('github repo list failed, refusing to publish:', src.errors);
     process.exit(1);
   }
+
+  // The newest commit anywhere, for the line under the bars. repos[] is
+  // sorted by push date, so the first entry is the one to ask.
+  if (pulse && !offline && repos.length) pulse.newest = await src.latestCommit(user, repos[0].name, gh);
 
   // Release and head-commit calls only for the repos on the page.
   const detail = offline ? fx.detail : {};
@@ -71,9 +76,11 @@ async function main() {
     }
   }
 
-  // The craft log is the only place a repo description is printed. A craft
-  // repo with no description gets its tagline pulled from its README.
-  const needsLine = craftEntries(c, repos)
+  // Repo descriptions print in the recent list and the craft log. Any of
+  // those repos with no description gets its tagline pulled from its README.
+  const listed = new Set(c.projects.map((p) => p.repo));
+  const recent = repos.filter((r) => !listed.has(r.name)).slice(0, c.recentLimit);
+  const needsLine = [...new Set([...recent, ...craftEntries(c, repos)])]
     .filter((r) => !r.description)
     .map((r) => r.name);
   const taglines = offline ? fx.taglines || {} : await src.readmeLines(user, needsLine, gh);
@@ -89,7 +96,7 @@ async function main() {
     await Promise.all(fontFiles.map(async (f) => (await stat(join(dist, 'fonts', `${f}.woff2`))).size))
   ).reduce((a, b) => a + b, 0);
 
-  const named = ['github:repos', 'vercel:projects', 'devto:articles', 'hn:search'];
+  const named = ['github:repos', 'github:contributions', 'github:events', 'vercel:projects', 'devto:articles', 'hn:search'];
   const meta = {
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA?.slice(0, 7) || 'local',
@@ -104,7 +111,7 @@ async function main() {
     })),
   };
 
-  const data = { repos, projects, posts, hn, detail, crates, taglines };
+  const data = { repos, projects, posts, hn, pulse, detail, crates, taglines };
 
   const html = page(c, data, meta);
   await writeFile(join(dist, 'index.html'), html);
