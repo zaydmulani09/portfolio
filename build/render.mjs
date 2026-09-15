@@ -27,115 +27,6 @@ function factLine(parts) {
   return kept.length ? `<p class="facts">${kept.join(', ')}.</p>` : '';
 }
 
-
-
-/* ------------------------------------------------------------------ craft */
-
-// Anything tagged with the craft topic on GitHub shows up here. The topic is
-// the only thing to maintain: tag a repo once and the next build picks it up.
-function craftEntries(c, repos) {
-  return repos
-    .filter((r) => (r.topics || []).includes(c.craft.topic))
-    .sort((a, b) => new Date(b.createdAt || b.pushedAt) - new Date(a.createdAt || a.pushedAt));
-}
-
-function craftRow(r, urlFor) {
-  const made = new Date(r.createdAt || r.pushedAt);
-  const stamp = made.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
-  const live = urlFor(r.name);
-  return `
-<li>
-  <span class="craft-when">${esc(stamp)}</span>
-  <span class="craft-what">
-    <strong>${link(r.url, r.name)}</strong>
-    ${r.description ? ` ${esc(r.description)}` : ''}
-  </span>
-  ${live ? `<span class="craft-go">${link(live, 'run it')}</span>` : '<span class="craft-go dim">code only</span>'}
-</li>`;
-}
-
-function craft(c, repos, urlFor) {
-  const all = craftEntries(c, repos);
-  if (!all.length) return '';
-  const shown = all.slice(0, 4);
-
-  return `
-<section class="block" aria-labelledby="craft-h">
-  <h2 id="craft-h">${esc(c.craft.heading)}</h2>
-  <p class="lead">${esc(c.craft.lead)}</p>
-  <ul class="craft">${shown.map((r) => craftRow(r, urlFor)).join('')}</ul>
-  ${all.length > shown.length ? `<p class="actions">${link('/craft', `All ${num(all.length)} of them`)}</p>` : ''}
-</section>`;
-}
-
-export function craftPage(c, data) {
-  const byProject = new Map((data.projects || []).map((p) => [p.name.toLowerCase(), p]));
-  const urlFor = (n) => byProject.get(String(n).toLowerCase())?.url || '';
-  const all = craftEntries(c, data.repos);
-
-  return `${head(c).replace('<title>', '<title>Craft, ')}
-<div class="bar">
-  <p class="who">${link('/', c.identity.name)}</p>
-  <nav aria-label="Profiles">${link('/', 'back to the front')}</nav>
-</div>
-<main id="main">
-  <div class="intro"><p>${esc(c.craft.pageIntro)}</p></div>
-  <section class="block" aria-labelledby="all-h">
-    <h1 id="all-h">${esc(c.craft.heading)}</h1>
-    <p class="lead">${esc(plural(all.length, 'thing'))}, newest first.</p>
-    <ul class="craft">${all.map((r) => craftRow(r, urlFor)).join('')}</ul>
-  </section>
-</main>
-<footer class="foot"><p>${esc(c.identity.name)}, ${esc(c.identity.location)}.</p></footer>
-</body>
-</html>
-`;
-}
-
-/* ----------------------------------------------------------------- pulse */
-
-// A month of commits, one bar a day, plus whatever I last typed into a commit
-// message. It is not a metric anybody should be impressed by. It is just what
-// the last month actually looked like, including the empty days. The unit
-// comes from the source: commits from the contribution graph, or pushes when
-// the build had to fall back to the events feed. The copy never upgrades one
-// into the other.
-function pulse(p) {
-  if (!p?.series?.length) return '';
-  const peak = Math.max(...p.series.map((d) => d.count), 1);
-  const one = p.unit === 'push' ? 'push' : 'commit';
-  const unit = (n) => plural(n, one, one === 'push' ? 'pushes' : 'commits');
-
-  const bars = p.series
-    .map((d) => {
-      const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
-      const label = d.count ? `${unit(d.count)} on ${d.day}` : `nothing on ${d.day}`;
-      return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
-    })
-    .join('');
-
-  const quiet = p.series.filter((d) => !d.count).length;
-
-  return `
-<aside class="pulse" aria-label="${esc(`${one === 'push' ? 'Push' : 'Commit'} activity over the last ${plural(p.days, 'day')}`)}">
-  <div class="bars" role="img" aria-label="${esc(
-    `${unit(p.total)} over ${plural(p.days, 'day')}, with ${plural(quiet, 'day')} of nothing`,
-  )}">${bars}</div>
-  <p class="pulse-read">${esc(unit(p.total))} in ${esc(plural(p.days, 'day'))}.${
-    quiet
-      ? ` ${esc(plural(quiet, 'day'))} of that I wrote nothing at all.`
-      : ' I wrote something every single day, which is not normal.'
-  }</p>
-  ${
-    p.newest
-      ? `<p class="pulse-last"><span class="dim">Last thing I wrote, in ${esc(
-          p.newest.repo,
-        )}, ${when(p.newest.at)}:</span> <q>${esc(p.newest.message)}</q></p>`
-      : ''
-  }
-</aside>`;
-}
-
 /* ------------------------------------------------------------------ head */
 
 function head(c) {
@@ -171,10 +62,10 @@ function head(c) {
 <a class="skip" href="#main">Skip to content</a>`;
 }
 
-/* ------------------------------------------------------------------ hero */
+/* ------------------------------------------------------------------- bar */
 
-// The top bar: name, profile links, and the h-card. Nothing autoplays on this
-// page; every demo waits for a click.
+// The top bar: name, profile links, and the h-card. Nothing on this page
+// autoplays; every demo waits for a click.
 function bar(c, hasCraft) {
   return `
 <div class="bar h-card">
@@ -190,133 +81,55 @@ function bar(c, hasCraft) {
 <h1 class="sr-only">${esc(c.identity.name)}</h1>`;
 }
 
-/* --------------------------------------------------------------- browser */
+/* -------------------------------------------------------------- projects */
 
-function browser(c, urlFor, repoFor) {
-  const items = c.browser
-    .map((b) => {
-      const r = repoFor(b.project) || {};
-      const url = urlFor(b.project);
-      const repo = r.url || `https://github.com/zaydmulani09/${b.project}`;
-
-      const run =
-        b.embed && url
-          ? `<button type="button" class="run" data-src="${esc(url)}" data-title="${esc(b.project)}">Run it here</button>`
-          : '';
-      const note = b.embedNote ? `<p class="facts">${esc(b.embedNote)}</p>` : '';
-
-      return `
-<article class="work" id="${esc(b.project)}">
-  <h3>${esc(b.project)}</h3>
-  <p>${esc(b.note)}</p>
-  ${factLine([
-    r.language ? esc(r.language) : '',
-    r.stars ? plural(r.stars, 'star') : '',
-    r.pushedAt ? `last pushed ${when(r.pushedAt)}` : '',
-  ])}
-  ${note}
-  <p class="actions">${run}${url ? link(url, 'Open it') : ''}${link(repo, 'Source')}</p>
-</article>`;
-    })
-    .join('');
-
-  return `
-<section class="block" aria-labelledby="run-h">
-  <h2 id="run-h">${esc(c.sections.browser)}</h2>
-  <p class="lead">No install, no account, nothing uploaded. The interesting part happens on your own GPU, which is also why none of them need a server.</p>
-  ${items}
-</section>`;
-}
-
-/* --------------------------------------------------------------- install */
-
-function install(c, repoFor, detail, crates) {
-  const items = c.featured
-    .map((f) => {
-      const r = repoFor(f.repo);
+// One list, one entry per project, in the order content.json gives them.
+// The note is hand-written; language, stars, release, downloads, licence and
+// the last push date are fetched. A project with a deployment that allows
+// framing gets a button that mounts it in place.
+function projects(c, urlFor, repoFor, detail, crates) {
+  const items = c.projects
+    .map((p) => {
+      const r = repoFor(p.repo);
       if (!r) return '';
-      const d = detail[f.repo] || {};
-      const cr = crates[f.crate] || null;
+      const d = detail[p.repo] || {};
+      const cr = p.crate ? crates[p.crate] || null : null;
+      const url = urlFor(p.repo);
+      const run =
+        p.embed && url
+          ? `<button type="button" class="run" data-src="${esc(url)}" data-title="${esc(p.repo)}">Run it here</button>`
+          : '';
 
       return `
-<article class="work">
-  <h3>${link(r.url, f.repo)}</h3>
-  <p>${esc(f.note)}</p>
+<article class="work" id="${esc(p.repo)}">
+  <h3>${link(r.url, p.repo)}</h3>
+  <p>${esc(p.note)}</p>
   ${factLine([
     r.language ? esc(r.language) : '',
     r.stars ? plural(r.stars, 'star') : '',
-    d.release ? `latest release ${link(d.release.url, d.release.tag)}` : 'no tagged release yet',
+    d.release ? `latest release ${link(d.release.url, d.release.tag)}` : '',
     cr ? `${plural(cr.downloads, 'download')} on crates.io` : '',
     r.license ? esc(r.license) : '',
     r.pushedAt ? `last pushed ${when(r.pushedAt)}` : '',
   ])}
-  ${
-    d.head
-      ? `<p class="commit">Most recent commit ${link(d.head.url, d.head.sha)}: ${esc(d.head.message)}</p>`
-      : ''
-  }
+  ${p.embedNote ? `<p class="facts">${esc(p.embedNote)}</p>` : ''}
+  ${run || url ? `<p class="actions">${run}${url ? link(url, 'Open it') : ''}</p>` : ''}
 </article>`;
     })
     .join('');
 
   return `
-<section class="block" aria-labelledby="install-h">
-  <h2 id="install-h">${esc(c.sections.install)}</h2>
-  <p class="lead">Single binaries, mostly Rust, mostly for people building on top of language models.</p>
+<section class="block" aria-labelledby="projects-h">
+  <h2 id="projects-h">${esc(c.sections.projects)}</h2>
   ${items}
 </section>`;
 }
 
-/* ------------------------------------------------------------------ rest */
+/* --------------------------------------------------------------- writing */
 
-function alsoUp(c, projects, repoFor) {
-  if (!projects?.length) return '';
-  const skip = new Set((c.web.skip || []).map((s) => s.toLowerCase()));
-  const rows = projects
-    .filter((p) => !skip.has(p.name.toLowerCase()))
-    .map((p) => {
-      const note =
-        c.web.note?.[p.name] ||
-        repoFor(p.repo || p.name)?.description ||
-        repoFor(p.name)?.description ||
-        '';
-      const broken = p.state && p.state !== 'READY';
-      return `<li>${link(p.url, p.name)}${note ? ` ${esc(note)}` : ''}${
-        broken ? ` <span class="warn">This deploy is failing right now and I have not fixed it.</span>` : ''
-      }</li>`;
-    })
-    .join('');
-
-  return `
-<section class="block" aria-labelledby="up-h">
-  <h2 id="up-h">${esc(c.sections.up)}</h2>
-  <p class="lead">Older or smaller, still deployed. Read from the Vercel API, failures included.</p>
-  <ul class="loose">${rows}</ul>
-</section>`;
-}
-
-function pushed(c, repos) {
-  const shown = new Set([...c.featured.map((f) => f.repo), ...c.browser.map((b) => b.project)]);
-  const rows = repos
-    .filter((r) => !shown.has(r.name))
-    .slice(0, c.recentLimit)
-    .map(
-      (r) =>
-        `<li>${link(r.url, r.name)}${r.description ? ` ${esc(r.description)}` : ''} <span class="dim">${
-          r.language ? `${esc(r.language)}, ` : ''
-        }last pushed ${when(r.pushedAt)}</span></li>`,
-    )
-    .join('');
-
-  return `
-<section class="block" aria-labelledby="pushed-h">
-  <h2 id="pushed-h">${esc(c.sections.pushed)}</h2>
-  <p class="lead">Unfiltered and in order. Some of it is unfinished, and some of it will stay that way.</p>
-  <ul class="loose">${rows}</ul>
-</section>`;
-}
-
-function elsewhere(hn, posts) {
+// Posts from dev.to and threads on Hacker News, dated and counted by those
+// sites, not by me.
+function writing(c, hn, posts) {
   const rows = [];
   for (const h of hn || [])
     rows.push(
@@ -324,54 +137,39 @@ function elsewhere(hn, posts) {
         h.createdAt,
       )}</span></li>`,
     );
-  for (const p of (posts || []).slice(0, 5))
+  for (const p of (posts || []).slice(0, 6))
     rows.push(`<li>${link(p.url, p.title)} <span class="dim">${when(p.publishedAt)}</span></li>`);
   if (!rows.length) return '';
 
   return `
-<section class="block" aria-labelledby="else-h">
-  <h2 id="else-h">Written up, and argued about</h2>
-  <p class="lead">Threads and posts that other people counted, rather than numbers I picked.</p>
+<section class="block" aria-labelledby="writing-h">
+  <h2 id="writing-h">${esc(c.sections.writing)}</h2>
   <ul class="loose">${rows.join('')}</ul>
 </section>`;
 }
 
-function tail(c, meta) {
-  c = { ...c, limits_heading: c.sections.limits, how_heading: c.sections.how };
+/* ------------------------------------------------------------------ foot */
+
+function foot(c, meta) {
   const errs = meta.errors.length
     ? `<p class="warn">Some of this page is stale: ${meta.errors
         .map((e) => `${esc(e.source)} failed with ${esc(e.error)}`)
         .join('; ')}.</p>`
     : '';
-
   return `
-<section class="block" aria-labelledby="limits-h">
-  <h2 id="limits-h">${esc(c.limits_heading)}</h2>
-  <ul class="loose">${c.limits.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>
-</section>
-
-<section class="block" aria-labelledby="how-h">
-  <h2 id="how-h">${esc(c.how_heading)}</h2>
-  <p>A Node script with no dependencies fetched every number above from the GitHub, Vercel, dev.to, crates.io, and Hacker News APIs and then wrote this file. It last ran ${when(
+<footer class="foot">
+  <p>${esc(c.identity.name)}, ${esc(c.identity.location)}. ${esc(c.identity.status)}</p>
+  <p class="dim">A script fetched the numbers on this page from the GitHub, Vercel, dev.to, crates.io and Hacker News APIs ${when(
     meta.generatedAt,
-  )}, and runs again on every push and every six hours. Star counts, release tags, deploy states and dates are never typed by hand, so either they are right or the page tells you which source failed.</p>
-  <p>The demos are the live deployments in a frame, not recordings. ${link(
-    '/build.json',
-    'build.json',
-  )} holds the exact data this page was rendered from, ${link(
+  )} and wrote this file; it runs again every six hours. ${link('/build.json', 'build.json')} holds the data it used, ${link(
     '/releases.xml',
     'releases.xml',
-  )} is a feed of tagged releases, and ${link(
+  )} lists tagged releases, and ${link(
     'https://github.com/zaydmulani09/portfolio',
-    'the source is here',
-  )}.</p>
-  <p class="dim">Static files on GitHub Pages. ${esc(plural(meta.fontFiles, 'self-hosted font file'))}, ${esc(
-    meta.fontBytes,
-  )}. ${esc(
-    meta.jsBytes,
-  )} of JavaScript, which relativises dates and starts the demos. No analytics, no cookies, no third-party requests until you press run.</p>
+    'the source is on GitHub',
+  )}. The page sets no cookies and loads nothing from a third party until you press Run.</p>
   ${errs}
-</section>`;
+</footer>`;
 }
 
 /* ------------------------------------------------------------------ page */
@@ -382,32 +180,72 @@ export function page(c, data, meta) {
 
   const urlFor = (name) => byProject.get(String(name).toLowerCase())?.url || '';
   const repoFor = (name) => byRepo.get(String(name).toLowerCase()) || null;
+  const hasCraft = craftEntries(c, data.repos).length > 0;
 
   return `${head(c)}
-${bar(c, craftEntries(c, data.repos).length > 0)}
+${bar(c, hasCraft)}
 <main id="main">
   <div class="intro">
-    <p>${esc(c.notes[0])}</p>
-    <p>${esc(c.notes[1])}</p>
+    ${c.intro.map((p) => `<p>${esc(p)}</p>`).join('\n    ')}
   </div>
-${pulse(data.pulse)}
-${browser(c, urlFor, repoFor)}
-${install(c, repoFor, data.detail, data.crates)}
-${craft(c, data.repos, urlFor)}
-${alsoUp(c, data.projects, repoFor)}
-${pushed(c, data.repos)}
-${elsewhere(data.hn, data.posts)}
-${tail(c, meta)}
+${projects(c, urlFor, repoFor, data.detail, data.crates)}
+${writing(c, data.hn, data.posts)}
 </main>
-<footer class="foot">
-  <p>${esc(c.identity.name)}, ${esc(c.identity.location)}. ${esc(c.identity.status)}</p>
-</footer>
+${foot(c, meta)}
 <script src="/app.js" defer></script>
 </body>
 </html>
 `;
 }
 
+/* ----------------------------------------------------------------- craft */
+
+// Anything tagged with the craft topic on GitHub shows up here. The topic is
+// the only thing to maintain: tag a repo once and the next build picks it up.
+export function craftEntries(c, repos) {
+  return repos
+    .filter((r) => (r.topics || []).includes(c.craft.topic))
+    .sort((a, b) => new Date(b.createdAt || b.pushedAt) - new Date(a.createdAt || a.pushedAt));
+}
+
+function craftRow(r, urlFor) {
+  const made = new Date(r.createdAt || r.pushedAt);
+  const stamp = made.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+  const live = urlFor(r.name);
+  return `
+<li>
+  <span class="craft-when">${esc(stamp)}</span>
+  <span class="craft-what">
+    <strong>${link(r.url, r.name)}</strong>
+    ${r.description ? ` ${esc(r.description)}` : ''}
+  </span>
+  ${live ? `<span class="craft-go">${link(live, 'run it')}</span>` : '<span class="craft-go dim">code only</span>'}
+</li>`;
+}
+
+export function craftPage(c, data) {
+  const byProject = new Map((data.projects || []).map((p) => [p.name.toLowerCase(), p]));
+  const urlFor = (n) => byProject.get(String(n).toLowerCase())?.url || '';
+  const all = craftEntries(c, data.repos);
+
+  return `${head(c).replace('<title>', '<title>Craft, ')}
+<div class="bar">
+  <p class="who">${link('/', c.identity.name)}</p>
+  <nav aria-label="Profiles">${link('/', 'back to the front')}</nav>
+</div>
+<main id="main">
+  <div class="intro"><p>${esc(c.craft.pageIntro)}</p></div>
+  <section class="block" aria-labelledby="all-h">
+    <h1 id="all-h">${esc(c.craft.heading)}</h1>
+    <p class="lead">${esc(plural(all.length, 'thing'))}, newest first.</p>
+    <ul class="craft">${all.map((r) => craftRow(r, urlFor)).join('')}</ul>
+  </section>
+</main>
+<footer class="foot"><p>${esc(c.identity.name)}, ${esc(c.identity.location)}.</p></footer>
+</body>
+</html>
+`;
+}
 
 /* --------------------------------------------------------------- archive */
 
@@ -418,7 +256,7 @@ export function archive(c, meta) {
 <article class="work">
   <h2>${link(v.path, `v.${v.n}`)}</h2>
   <p>${esc(v.note)}</p>
-  <p class="facts">Retired ${when(v.retired)}. Still live at ${link(v.path, v.path)}, exactly as it was.</p>
+  <p class="facts">Retired ${when(v.retired)}. Still served at ${link(v.path, v.path)}, unchanged.</p>
 </article>`,
     )
     .join('');
@@ -430,11 +268,11 @@ export function archive(c, meta) {
 </div>
 <main id="main">
   <div class="intro">
-    <p>Every version of this site stays up. Nothing gets deleted when I redesign, because the old ones are a fair record of what I thought was good at the time, and some of them are embarrassing.</p>
+    <p>Old versions of this site stay up at their own paths. I keep them as a record of what I thought looked good at the time.</p>
     <p>This is ${esc(c.version.label)}, running now.</p>
   </div>
   <section class="block" aria-labelledby="old-h">
-    <h1 id="old-h">I used to look like this.</h1>
+    <h1 id="old-h">Previous versions</h1>
     <p class="lead">Frozen, unindexed, still served.</p>
     ${rows}
   </section>

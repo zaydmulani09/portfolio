@@ -7,8 +7,8 @@
 
 A one-page site where the work runs in the page, generated from live APIs.
 
-The hero is a real Vercel deployment in a frame, not a screenshot. Three of the
-browser projects mount the same way on demand, from a "Run it here" button.
+Three of the browser projects mount their real Vercel deployment in place from a
+"Run it here" button. Nothing runs until you press it.
 
 Nothing on the published page is a number I typed. Star counts, release tags,
 crate downloads, deploy states, deployment URLs, last-push dates, Hacker News
@@ -86,9 +86,8 @@ repo does not change.
 
 ## Craft log
 
-Anything on GitHub carrying the `craft` topic appears at `/craft` and in the
-"I mess around." section on the front page, newest first, dated by when the
-repo was created. Tag a repo once and the next build picks it up; there is no
+Anything on GitHub carrying the `craft` topic appears at `/craft`, linked from
+the top bar, newest first, dated by when the repo was created. Tag a repo once and the next build picks it up; there is no
 list to maintain here.
 
 If a Vercel deployment shares the repo's name, the entry gets a "run it" link.

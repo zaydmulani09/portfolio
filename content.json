@@ -1,11 +1,11 @@
 {
-  "_readme": "Everything in this file is written by hand. Everything NOT in this file is fetched from an API at build time. Edit here; the tables update themselves.",
+  "_readme": "Everything in this file is written by hand. Everything NOT in this file is fetched from an API at build time. Edit here; the page updates itself.",
   "identity": {
     "name": "Zayd Mulani",
     "handle": "zaydmulani09",
     "location": "New Jersey, US",
-    "line": "I build local-first tools you can run yourself, read end to end, and check. Mostly Rust. Mostly in public.",
-    "status": "High-school senior. Previously a data and ML engineering intern. Open to internships and research.",
+    "line": "Simulations that run on the GPU in a browser tab, and Rust command-line tools for people who work with language models.",
+    "status": "High-school senior. Applying to colleges, and looking for an internship or a research position for next summer.",
     "email": "zaydmulani@gmail.com",
     "links": [
       {
@@ -26,86 +26,64 @@
       }
     ]
   },
-  "notes": [
-    "I am Zayd. I write two kinds of thing. One is physics and signal processing compiled to the GPU and put behind a URL, so you can open it and poke at it without installing anything or handing over a file. The other is Rust command-line tools for people building on top of language models: memory, MCP plumbing, a cost tracker, a fuzzer.",
-    "Both follow the same rule. You should be able to run it yourself, read the source that produced the output, and disagree with the result. Nothing here needs an account and nothing here phones home."
+  "intro": [
+    "I'm Zayd Mulani, a high-school senior in New Jersey. I build simulations that run on the GPU inside a browser tab, and Rust command-line tools for people who work with language models.",
+    "Before this I worked as a data and ML engineering intern. I'm applying to colleges, and I'm looking for an internship or a research position for next summer."
   ],
-  "limits": [
-    "Most of these are early. Versions are pre-1.0 unless a release says otherwise, and I have not run any of them under sustained production load.",
-    "Stars, downloads, and deploy states come from the API, so they are current. A star count is popularity, not evidence that the thing works. Read the fixtures.",
-    "Windows support is untested on most of the Rust tools."
-  ],
-  "featured": [
+  "projects": [
     {
       "repo": "mnemo",
-      "note": "Local-first memory layer for LLM pipelines. Extracts entities into a SQLite knowledge graph and scores context back into the next prompt. Runs against Ollama, OpenAI, or any OpenAI-compatible endpoint.",
+      "note": "A local-first memory layer for LLM pipelines. It extracts entities into a SQLite knowledge graph and scores context back into the next prompt. Works with Ollama, OpenAI, or any OpenAI-compatible endpoint.",
       "crate": null
+    },
+    {
+      "repo": "slimeroute",
+      "note": "A slime mould simulation, up to a million agents on the GPU, that grows a transit network across cities you place and scores it against the minimum spanning tree.",
+      "embed": true
+    },
+    {
+      "repo": "seewifi",
+      "note": "A finite-difference time-domain solve of Maxwell's equations for your floor plan. Draw the walls, drop a router, drag it and watch the dead zones move.",
+      "embed": true
     },
     {
       "repo": "phaedra",
-      "note": "Coverage-guided fuzzer for network protocols and binary formats, with an LLM used only to bootstrap the seed corpus.",
-      "crate": null
-    },
-    {
-      "repo": "mcp-gateway",
-      "note": "Reverse proxy for MCP servers: routing, auth, rate limiting, request logging. One binary in front of the servers you already run.",
-      "crate": null
-    },
-    {
-      "repo": "agentwatch",
-      "note": "Local token and cost tracker for Claude Code, Codex, and Gemini CLI. Proxies locally, stores to SQLite, reads out in a TUI.",
-      "crate": null
+      "note": "A coverage-guided fuzzer for network protocols and binary formats. An LLM writes the seed corpus and nothing else."
     },
     {
       "repo": "vecdb",
-      "note": "Hybrid vector database: HNSW for dense retrieval, BM25 for lexical, fused at query time. Single binary, no cloud.",
-      "crate": null
-    }
-  ],
-  "web": {
-    "_comment": "Deployments not featured above. 'skip' hides one; 'note' gives it a line. Anything with no note falls back to the GitHub description, then the first real line of the README.",
-    "skip": [
-      "landing",
-      "frontend",
-      "prior",
-      "zayd-transcriber",
-      "quiver",
-      "jalgiai",
-      "slimeroute",
-      "seewifi",
-      "xorcery",
-      "quivercam"
-    ],
-    "note": {
-      "p4c": "Chapter management for the Pages for Change literacy network, which I co-founded. Student leads run outreach and book inventory; national admins see every chapter at once.",
-      "outreach-engine": "Cold-outreach tracker I built for my own research and internship search."
-    }
-  },
-  "recentLimit": 8,
-  "dormantAfterDays": 180,
-  "browser": [
-    {
-      "project": "slimeroute",
-      "embed": true,
-      "note": "A million agents on the GPU, following one another's trails. Cities are food. Busy veins thicken, quiet ones decay. What is left over is a transit network, which the page scores against the Euclidean minimum spanning tree on cost, fault tolerance, detour, and reach. Nothing is fitted to a known answer."
+      "note": "A hybrid vector database: HNSW for dense retrieval, BM25 for lexical search, fused at query time. One binary, no cloud."
     },
     {
-      "project": "seewifi",
-      "embed": true,
-      "note": "A finite-difference time-domain solve of Maxwell's equations for your apartment, one frame at a time. Draw your floor plan, drop a router, drag it around and watch the dead zones move. Switch to 5 GHz and watch it die at the second wall. It will also show you what a conventional WiFi planner's heatmap would have claimed, and where that is wrong."
+      "repo": "xorcery",
+      "note": "A superoptimiser that searches on the GPU for the shortest branchless program computing a function of 32-bit words, then checks the winner against all 2^32 inputs.",
+      "embed": true
     },
     {
-      "project": "xorcery",
-      "embed": true,
-      "note": "A superoptimiser that runs its search on the GPU. Give it a function of 32-bit words and it looks for the shortest branchless program computing the same thing, then checks the winner against all 2^32 inputs rather than sampling."
-    },
-    {
-      "project": "quivercam",
+      "repo": "quivercam",
+      "note": "Motion amplification in the browser. It magnifies colour changes too small to see, so blood moving through a face becomes visible and a heart rate falls out of it.",
       "embed": false,
-      "embedNote": "This one cannot run embedded: it sets camera access to its own origin only, so a frame on another site gets nothing.",
-      "note": "Motion amplification in the browser. It magnifies colour and movement too small to see, about sixty times over, so blood moving through a face becomes visible and a heart rate falls out of it without anything touching you. Runs on your GPU, and makes no network request after the page loads."
+      "embedNote": "It keeps camera access to its own origin, so it will not run inside a frame here."
+    },
+    {
+      "repo": "mcp-gateway",
+      "note": "A reverse proxy for MCP servers: routing, auth, rate limiting and request logging in one binary."
+    },
+    {
+      "repo": "agentwatch",
+      "note": "A local token and cost tracker for Claude Code, Codex and Gemini CLI. It proxies locally, stores to SQLite and reads out in a TUI."
     }
   ],
+  "sections": {
+    "projects": "Projects",
+    "writing": "Writing"
+  },
+  "craft": {
+    "topic": "craft",
+    "heading": "Small things",
+    "lead": "Experiments, one sitting each. Anything on GitHub tagged craft appears here on the next build.",
+    "pageIntro": "Things too small to call projects. Most took an evening, and some do not work."
+  },
   "version": {
     "current": 3,
     "label": "v.3",
@@ -114,23 +92,8 @@
         "n": 1,
         "path": "/v/1/",
         "retired": "2026-09-13",
-        "note": "Cream paper, terracotta accents, numbered section markers, a hand-typed star count that went stale within a week. It looked like a design template because it was one."
+        "note": "Cream paper, terracotta accents, numbered section markers, and a star count I typed by hand that went stale within a week."
       }
     ]
-  },
-  "sections": {
-    "browser": "I simulate things.",
-    "install": "I ship binaries.",
-    "up": "I keep things running.",
-    "pushed": "I push a lot of half-finished things.",
-    "limits": "I get things wrong.",
-    "how": "I generate this page.",
-    "craft": "I mess around."
-  },
-  "craft": {
-    "topic": "craft",
-    "heading": "I mess around.",
-    "lead": "Small experiments, mostly one sitting each. Nothing here is a product. Anything on GitHub tagged “craft” lands on this list on the next build, so it fills itself.",
-    "pageIntro": "Things too small to be projects. A shader that did one thing, an algorithm I wanted to see move, a format I wanted to take apart. Most took an evening. Some do not work properly and are still here."
   }
 }

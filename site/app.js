@@ -64,30 +64,7 @@
     frame.addEventListener('load', () => host.classList.add('is-live'), { once: true });
   }
 
-  const heroStage = document.querySelector('.hero .stage[data-src]');
-  if (heroStage) {
-    const small = window.matchMedia('(max-width: 720px)').matches;
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const thrifty = navigator.connection?.saveData === true;
-
-    if (small || still || thrifty) {
-      // Do not spin up a GPU simulation on a phone, a metered connection, or
-      // for someone who has asked for less motion. Offer it instead.
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'run run-big';
-      btn.textContent = `Run ${heroStage.dataset.title}`;
-      btn.addEventListener('click', () =>
-        mount(heroStage, heroStage.dataset.src, heroStage.dataset.title),
-      );
-      heroStage.classList.add('stage-idle');
-      heroStage.appendChild(btn);
-    } else {
-      mount(heroStage, heroStage.dataset.src, heroStage.dataset.title);
-    }
-  }
-
-  for (const btn of document.querySelectorAll('button.run:not(.run-big)')) {
+  for (const btn of document.querySelectorAll('button.run')) {
     btn.addEventListener('click', () => {
       const host = document.createElement('div');
       host.className = 'stage stage-inline';

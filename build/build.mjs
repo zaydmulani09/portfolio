@@ -14,7 +14,7 @@ import { readFile, writeFile, mkdir, cp, stat, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as src from './sources.mjs';
-import { page, feed, sitemap, archive, craftPage } from './render.mjs';
+import { page, feed, sitemap, archive, craftPage, craftEntries } from './render.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -33,14 +33,13 @@ async function main() {
   const offline = process.argv.includes('--fixture');
   const fx = offline ? JSON.parse(await readFile(join(root, 'build/fixture.json'), 'utf8')) : null;
 
-  const [repos, projects, posts, hn, pulse] = offline
-    ? [fx.repos, fx.projects, fx.posts, fx.hn, fx.pulse]
+  const [repos, projects, posts, hn] = offline
+    ? [fx.repos, fx.projects, fx.posts, fx.hn]
     : await Promise.all([
         src.github(user, gh),
         src.vercel(process.env.VERCEL_TOKEN, process.env.VERCEL_TEAM_ID),
         src.devto(user),
         src.hackernews(user),
-        src.activity(user, gh),
       ]);
 
   if (!repos) {
@@ -50,10 +49,10 @@ async function main() {
     process.exit(1);
   }
 
-  // Detail calls only for featured repos.
+  // Release and head-commit calls only for the repos on the page.
   const detail = offline ? fx.detail : {};
   if (!offline) {
-    for (const f of c.featured) {
+    for (const f of c.projects) {
       if (repos.some((r) => r.name === f.repo)) {
         detail[f.repo] = await src.repoDetail(user, f.repo, gh);
       }
@@ -62,7 +61,7 @@ async function main() {
 
   const crates = offline ? fx.crates : {};
   if (!offline) {
-    for (const f of c.featured) {
+    for (const f of c.projects) {
       if (f.crate) {
         const got = await src.crate(f.crate);
         if (got) crates[f.crate] = got;
@@ -72,17 +71,11 @@ async function main() {
     }
   }
 
-  // Any repo that will be rendered but has no description gets its tagline
-  // pulled from its README. Bounded to the repos actually on the page.
-  const skip = new Set((c.web.skip || []).map((x) => x.toLowerCase()));
-  const noted = new Set(Object.keys(c.web.note || {}).map((x) => x.toLowerCase()));
-  const shown = new Set([
-    ...(projects || [])
-      .filter((p) => !skip.has(p.name.toLowerCase()) && !noted.has(p.name.toLowerCase()))
-      .map((p) => p.repo || p.name),
-    ...repos.filter((r) => !c.featured.some((f) => f.repo === r.name)).slice(0, c.recentLimit).map((r) => r.name),
-  ]);
-  const needsLine = repos.filter((r) => shown.has(r.name) && !r.description).map((r) => r.name);
+  // The craft log is the only place a repo description is printed. A craft
+  // repo with no description gets its tagline pulled from its README.
+  const needsLine = craftEntries(c, repos)
+    .filter((r) => !r.description)
+    .map((r) => r.name);
   const taglines = offline ? fx.taglines || {} : await src.readmeLines(user, needsLine, gh);
   for (const r of repos) if (!r.description && taglines[r.name]) r.description = taglines[r.name];
 
@@ -96,7 +89,7 @@ async function main() {
     await Promise.all(fontFiles.map(async (f) => (await stat(join(dist, 'fonts', `${f}.woff2`))).size))
   ).reduce((a, b) => a + b, 0);
 
-  const named = ['github:repos', 'github:contributions', 'github:events', 'vercel:projects', 'devto:articles', 'hn:search'];
+  const named = ['github:repos', 'vercel:projects', 'devto:articles', 'hn:search'];
   const meta = {
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA?.slice(0, 7) || 'local',
@@ -111,7 +104,7 @@ async function main() {
     })),
   };
 
-  const data = { repos, projects, posts, hn, pulse, detail, crates, taglines };
+  const data = { repos, projects, posts, hn, detail, crates, taglines };
 
   const html = page(c, data, meta);
   await writeFile(join(dist, 'index.html'), html);
