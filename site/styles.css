@@ -288,6 +288,14 @@ h3,
 }
 .tick-none { background: var(--rule); }
 
+.pulse-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: -10px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .pulse-read { margin: 0; font-size: 16px; color: var(--muted); }
 
 .pulse-last {

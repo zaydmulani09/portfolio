@@ -97,19 +97,31 @@ function pulse(p) {
   const bars = p.series
     .map((d) => {
       const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
-      const label = d.count ? `${unit(d.count)} on ${d.day}` : `nothing on ${d.day}`;
+      const label = d.partial
+        ? d.count
+          ? `${unit(d.count)} so far on ${d.day}`
+          : `nothing yet on ${d.day}`
+        : d.count
+          ? `${unit(d.count)} on ${d.day}`
+          : `nothing on ${d.day}`;
       return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
     })
     .join('');
 
-  const quiet = p.series.filter((d) => !d.count).length;
+  // Today is still in progress, so it is never one of the quiet days.
+  const quiet = p.series.filter((d) => !d.count && !d.partial).length;
   const read = quiet
     ? `${unit(p.total)} in the last ${plural(p.days, 'day')}, ${plural(quiet, 'day')} with none.`
     : `${unit(p.total)} in the last ${plural(p.days, 'day')}, at least one on each.`;
+  const stamp = (day) =>
+    new Date(`${day}T00:00:00Z`).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const firstDay = p.series[0].day;
+  const lastDay = p.series[p.series.length - 1].day;
 
   return `
 <aside class="pulse" aria-label="${esc(`${one === 'push' ? 'Push' : 'Commit'} activity over the last ${plural(p.days, 'day')}`)}">
-  <div class="bars" role="img" aria-label="${esc(read)}">${bars}</div>
+  <div class="bars" role="img" aria-label="${esc(`${read} ${stamp(firstDay)} to ${stamp(lastDay)}.`)}">${bars}</div>
+  <p class="pulse-axis"><span>${esc(stamp(firstDay))}</span><span>${esc(stamp(lastDay))}, today</span></p>
   <p class="pulse-read">${esc(read)}</p>
   ${
     p.newest

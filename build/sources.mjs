@@ -347,13 +347,14 @@ async function publicEvents(user, token, cutoff, maxPages) {
 export async function activity(user, token, days = 30) {
   const headers = token ? { authorization: `Bearer ${token}` } : {};
 
-  // The last `days` complete UTC days, ending yesterday. Today is only part of
-  // a day and would read as quiet every morning.
+  // The last `days` UTC days ending today, like the graph on the profile.
+  // Today is only part of a day, so its bar is marked partial and it is never
+  // counted as a quiet day.
   const now = new Date();
   const todayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const cutoff = todayStart - days * 86400000;
+  const cutoff = todayStart - (days - 1) * 86400000;
 
-  const commits = await contributions(user, token, cutoff, todayStart - 1);
+  const commits = await contributions(user, token, cutoff, +now);
 
   // The feed is only needed when the graph did not answer.
   const feed = commits ? null : await publicEvents(user, token, cutoff, 3);
@@ -381,10 +382,10 @@ export async function activity(user, token, days = 30) {
   // Fill the gaps so quiet days read as quiet rather than disappearing.
   const series = [];
   const first = new Date(start).toISOString().slice(0, 10);
-  for (let i = days; i >= 1; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
     if (day < first) continue;
-    series.push({ day, count: byDay.get(day) || 0 });
+    series.push({ day, count: byDay.get(day) || 0, ...(i === 0 ? { partial: true } : {}) });
   }
 
   return { series, unit, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
