@@ -16,3 +16,9 @@ Thumbs.db
 .vscode/
 .idea/
 dist/
+
+# local notes and editor config, never published
+CLAUDE.md
+DESIGN.md
+KICKOFF.md
+.claude/
