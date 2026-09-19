@@ -267,12 +267,24 @@ export async function readmeLines(user, repos, token) {
 // fails, the events feed answers instead, and only that failure is a stale page.
 async function contributions(user, token, from, to) {
   if (!token) return null;
+  // The four contribution kinds GitHub itemises, plus the calendar total. The
+  // calendar is the authoritative daily number, the same one the profile graph
+  // draws; the typed connections say what each day was made of. Anything the
+  // calendar counts beyond the four kinds (private work this token cannot
+  // itemise, repositories created) is folded into "other" so the bar height
+  // still equals the profile graph. The typed connections cap at 100 nodes
+  // each, which is far above a month of issues, PRs or reviews here; if that
+  // ever overflows, the surplus also lands in "other" rather than being lost.
   const query = `query($user: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $user) {
       contributionsCollection(from: $from, to: $to) {
+        contributionCalendar { weeks { contributionDays { date contributionCount } } }
         commitContributionsByRepository(maxRepositories: 100) {
           contributions(first: 100) { nodes { occurredAt commitCount } }
         }
+        issueContributions(first: 100) { nodes { occurredAt } }
+        pullRequestContributions(first: 100) { nodes { occurredAt } }
+        pullRequestReviewContributions(first: 100) { nodes { occurredAt } }
       }
     }
   }`;
@@ -283,21 +295,32 @@ async function contributions(user, token, from, to) {
     label: 'github:contributions',
     quiet: true,
   });
-  const repos = body?.data?.user?.contributionsCollection?.commitContributionsByRepository;
-  if (!Array.isArray(repos)) {
+  const cc = body?.data?.user?.contributionsCollection;
+  const repos = cc?.commitContributionsByRepository;
+  if (!Array.isArray(repos) || !cc?.contributionCalendar) {
     const why = body?.errors?.map((e) => e.message).join('; ') || 'no response';
     console.log(`  contributions: unavailable (${why}), falling back to the events feed`);
     return null;
   }
+
+  // day -> { commit, pr, issue, review }
   const byDay = new Map();
-  for (const r of repos) {
-    for (const c of r.contributions?.nodes || []) {
-      const day = c.occurredAt.slice(0, 10);
-      byDay.set(day, (byDay.get(day) || 0) + c.commitCount);
-    }
-  }
-  console.log(`  contributions: ${[...byDay.values()].reduce((a, b) => a + b, 0)} commits across ${repos.length} repos`);
-  return byDay;
+  const bump = (day, kind, n = 1) => {
+    const e = byDay.get(day) || { commit: 0, pr: 0, issue: 0, review: 0 };
+    e[kind] += n;
+    byDay.set(day, e);
+  };
+  for (const r of repos) for (const c of r.contributions?.nodes || []) bump(c.occurredAt.slice(0, 10), 'commit', c.commitCount);
+  for (const n of cc.issueContributions?.nodes || []) bump(n.occurredAt.slice(0, 10), 'issue');
+  for (const n of cc.pullRequestContributions?.nodes || []) bump(n.occurredAt.slice(0, 10), 'pr');
+  for (const n of cc.pullRequestReviewContributions?.nodes || []) bump(n.occurredAt.slice(0, 10), 'review');
+
+  const calByDay = new Map();
+  for (const w of cc.contributionCalendar.weeks || []) for (const d of w.contributionDays || []) calByDay.set(d.date, d.contributionCount);
+
+  const total = [...calByDay.values()].reduce((a, b) => a + b, 0);
+  console.log(`  contributions: ${total} across commits, PRs, issues and reviews`);
+  return { byDay, calByDay };
 }
 
 // The feed is public, so the token only buys rate limit, and the token Actions
@@ -354,33 +377,48 @@ export async function activity(user, token, days = 30) {
   const todayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const cutoff = todayStart - (days - 1) * 86400000;
 
-  const commits = await contributions(user, token, cutoff, +now);
+  const graph = await contributions(user, token, cutoff, +now);
 
   // The feed is only needed when the graph did not answer.
-  const feed = commits ? null : await publicEvents(user, token, cutoff, 3);
-  if (!commits && !feed) return null;
-  const events = feed?.events || [];
+  const feed = graph ? null : await publicEvents(user, token, cutoff, 3);
+  if (!graph && !feed) return null;
 
-  let unit = 'commit';
-  let byDay = commits;
-  let start = cutoff;
-  if (!byDay) {
-    unit = 'push';
-    byDay = new Map();
-    for (const e of events) {
-      if (e.type !== 'PushEvent' || +new Date(e.created_at) < cutoff) continue;
-      const day = new Date(e.created_at).toISOString().slice(0, 10);
-      byDay.set(day, (byDay.get(day) || 0) + 1);
+  const KINDS = ['commit', 'pr', 'issue', 'review', 'other'];
+  const series = [];
+
+  if (graph) {
+    // The graph itemises each day. The calendar total is the profile-graph
+    // number and wins; the segments are the kinds we could name, with "other"
+    // absorbing anything the calendar counts beyond them.
+    for (let i = days - 1; i >= 0; i--) {
+      const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
+      const p = graph.byDay.get(day) || { commit: 0, pr: 0, issue: 0, review: 0 };
+      const typed = p.commit + p.pr + p.issue + p.review;
+      const cal = graph.calByDay.has(day) ? graph.calByDay.get(day) : typed;
+      const count = Math.max(cal, typed);
+      const parts = { commit: p.commit, pr: p.pr, issue: p.issue, review: p.review, other: Math.max(0, count - typed) };
+      series.push({ day, count, parts, ...(i === 0 ? { partial: true } : {}) });
     }
-    // If the cap cut the feed off inside the window, the days before the
-    // oldest event are unknown, not quiet. Shorten the window to what was
-    // actually seen rather than draw empty days that may not have been.
-    const oldest = events.length ? +new Date(events[events.length - 1].created_at) : null;
-    if (!feed.exhausted && oldest !== null && oldest > cutoff) start = oldest;
+    const parts = KINDS.reduce((o, k) => ((o[k] = series.reduce((a, b) => a + b.parts[k], 0)), o), {});
+    return { series, unit: 'contribution', parts, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
   }
 
-  // Fill the gaps so quiet days read as quiet rather than disappearing.
-  const series = [];
+  // Fallback: the public events feed. It only knows pushes, and the copy never
+  // dresses a push up as a commit or a contribution.
+  const events = feed.events || [];
+  const byDay = new Map();
+  for (const e of events) {
+    if (e.type !== 'PushEvent' || +new Date(e.created_at) < cutoff) continue;
+    const day = new Date(e.created_at).toISOString().slice(0, 10);
+    byDay.set(day, (byDay.get(day) || 0) + 1);
+  }
+  // If the cap cut the feed off inside the window, the days before the oldest
+  // event are unknown, not quiet. Shorten the window to what was actually seen
+  // rather than draw empty days that may not have been.
+  let start = cutoff;
+  const oldest = events.length ? +new Date(events[events.length - 1].created_at) : null;
+  if (!feed.exhausted && oldest !== null && oldest > cutoff) start = oldest;
+
   const first = new Date(start).toISOString().slice(0, 10);
   for (let i = days - 1; i >= 0; i--) {
     const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
@@ -388,7 +426,7 @@ export async function activity(user, token, days = 30) {
     series.push({ day, count: byDay.get(day) || 0, ...(i === 0 ? { partial: true } : {}) });
   }
 
-  return { series, unit, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
+  return { series, unit: 'push', total: series.reduce((a, b) => a + b.count, 0), days: series.length };
 }
 
 // The newest commit on the most recently pushed repo, quoted as written. The
