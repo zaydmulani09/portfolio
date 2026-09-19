@@ -40,6 +40,15 @@
   --text: #e9ece6;
   --muted: #959b90;
 
+  /* Contribution-graph segment colours. Commits track the text colour so they
+     stay the base tone (and flip to black in print); the rarer kinds get a
+     muted, desaturated hue each so the mix is legible without shouting. */
+  --c-commit: var(--text);
+  --c-pr: #86b06a;
+  --c-issue: #d29b63;
+  --c-review: #79a7cf;
+  --c-other: #5d6560;
+
   --sans: 'Public Sans', system-ui, -apple-system, sans-serif;
   --display: 'Bricolage', 'Public Sans', system-ui, sans-serif;
   --mono: 'Commit Mono', ui-monospace, Menlo, Consolas, monospace;
@@ -287,6 +296,92 @@ h3,
   background: var(--text);
 }
 .tick-none { background: var(--rule); }
+
+/* Graph bars are a stack of coloured segments instead of one solid block. The
+   tick is the day's height; each segment grows in proportion to its count. */
+.bars-graph .tick {
+  display: flex;
+  flex-direction: column-reverse;
+  background: none;
+  border-radius: 1px;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+.bars-graph .tick.tick-none {
+  background: var(--rule);
+}
+.seg { width: 100%; flex: 0 0 auto; min-height: 1px; }
+.seg-commit { background: var(--c-commit); }
+.seg-pr { background: var(--c-pr); }
+.seg-issue { background: var(--c-issue); }
+.seg-review { background: var(--c-review); }
+.seg-other { background: var(--c-other); }
+
+/* Pick a bar up on hover or keyboard focus: a small bounce, then it settles
+   raised and brightened while the tooltip is open. Reduced-motion users get
+   the raise and brightness without the bounce (animations are killed below). */
+.bars-graph .tick:hover,
+.bars-graph .tick:focus-visible {
+  transform: translateY(-6px);
+  filter: brightness(1.18);
+  outline: none;
+  animation: tick-bounce 0.42s ease;
+}
+@keyframes tick-bounce {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-10px); }
+  70% { transform: translateY(-3px); }
+  100% { transform: translateY(-6px); }
+}
+
+/* Colour key: what each band means, shown under the bars. */
+.pulse-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.pulse-legend .key { display: inline-flex; align-items: center; gap: 7px; }
+.pulse-legend .sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.sw-commit { background: var(--c-commit); }
+.sw-pr { background: var(--c-pr); }
+.sw-issue { background: var(--c-issue); }
+.sw-review { background: var(--c-review); }
+.sw-other { background: var(--c-other); }
+
+/* JS tooltip: a small panel above the hovered bar naming the day and its mix,
+   each line dotted in the colour it stands for. Hidden until app.js opens it,
+   and the page reads fine without it (the tick keeps its title attribute). */
+.pulse-tip {
+  position: fixed;
+  z-index: 20;
+  min-width: 132px;
+  padding: 9px 11px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.pulse-tip.show { opacity: 1; transform: translateY(0); }
+.pulse-tip .tip-day { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.pulse-tip .tip-row { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pulse-tip .tip-dot { width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+.pulse-tip .tip-none { color: var(--muted); }
 
 .pulse-axis {
   display: flex;
