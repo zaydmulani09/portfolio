@@ -83,54 +83,102 @@ function bar(c, hasCraft) {
 
 /* ----------------------------------------------------------------- pulse */
 
-// A month of commits, one bar a day, from the same data as the contribution
-// graph on the GitHub profile, plus the newest commit message as written.
-// The unit comes from the source: commits from the graph, or pushes when the
-// build had to fall back to the events feed. The copy never upgrades one into
-// the other.
+// A month of activity, one bar a day. When the GraphQL graph answers, each bar
+// is the profile contribution total for that day, split into coloured segments
+// by kind (commits, pull requests, issues, reviews, and an "other" band for
+// private work the token cannot itemise). When the build has to fall back to
+// the public events feed it only knows pushes, so the bars are one colour and
+// the copy says "pushes", never dressing them up as commits or contributions.
+
+// kind key, legend label, singular noun. Order is stack order (bottom up) and
+// legend order.
+const KINDS = [
+  ['commit', 'Commits', 'commit'],
+  ['pr', 'Pull requests', 'pull request'],
+  ['issue', 'Issues', 'issue'],
+  ['review', 'Reviews', 'review'],
+  ['other', 'Other', 'other contribution'],
+];
+
+const stamp = (day) =>
+  new Date(`${day}T00:00:00Z`).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+// "5 commits, 2 pull requests and 1 issue on Sep 17", read out for the tooltip,
+// the title attribute and the screen-reader label.
+function dayLabel(d) {
+  const on = `${d.partial ? 'so far ' : ''}on ${stamp(d.day)}`;
+  if (!d.count) return d.partial ? `nothing yet on ${stamp(d.day)}` : `nothing on ${stamp(d.day)}`;
+  const bits = KINDS.filter(([k]) => (d.parts?.[k] || 0) > 0).map(([k, , one]) => plural(d.parts[k], one));
+  const list = bits.length < 2 ? bits[0] : `${bits.slice(0, -1).join(', ')} and ${bits[bits.length - 1]}`;
+  return `${list} ${on}`;
+}
+
 function pulse(p) {
   if (!p?.series?.length) return '';
   const peak = Math.max(...p.series.map((d) => d.count), 1);
-  const one = p.unit === 'push' ? 'push' : 'commit';
-  const unit = (n) => plural(n, one, one === 'push' ? 'pushes' : 'commits');
-
-  const bars = p.series
-    .map((d) => {
-      const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
-      const label = d.partial
-        ? d.count
-          ? `${unit(d.count)} so far on ${d.day}`
-          : `nothing yet on ${d.day}`
-        : d.count
-          ? `${unit(d.count)} on ${d.day}`
-          : `nothing on ${d.day}`;
-      return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
-    })
-    .join('');
-
-  // Today is still in progress, so it is never one of the quiet days.
-  const quiet = p.series.filter((d) => !d.count && !d.partial).length;
-  const read = quiet
-    ? `${unit(p.total)} in the last ${plural(p.days, 'day')}, ${plural(quiet, 'day')} with none.`
-    : `${unit(p.total)} in the last ${plural(p.days, 'day')}, at least one on each.`;
-  const stamp = (day) =>
-    new Date(`${day}T00:00:00Z`).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const graph = p.unit === 'contribution' && p.parts;
   const firstDay = p.series[0].day;
   const lastDay = p.series[p.series.length - 1].day;
+  const quiet = p.series.filter((d) => !d.count && !d.partial).length; // today is never a quiet day
+  const noneNote = quiet ? ` ${plural(quiet, 'day')} with none.` : '';
 
-  return `
-<aside class="pulse" aria-label="${esc(`${one === 'push' ? 'Push' : 'Commit'} activity over the last ${plural(p.days, 'day')}`)}">
+  // --- fallback: one colour, pushes from the events feed ---------------------
+  if (!graph) {
+    const unit = (n) => plural(n, 'push', 'pushes');
+    const bars = p.series
+      .map((d) => {
+        const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
+        const label = d.count ? `${unit(d.count)} ${d.partial ? 'so far ' : ''}on ${stamp(d.day)}` : d.partial ? `nothing yet on ${stamp(d.day)}` : `nothing on ${stamp(d.day)}`;
+        return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" title="${esc(label)}"></span>`;
+      })
+      .join('');
+    const read = quiet
+      ? `${unit(p.total)} in the last ${plural(p.days, 'day')},${noneNote}`
+      : `${unit(p.total)} in the last ${plural(p.days, 'day')}, at least one on each.`;
+    return `
+<aside class="pulse" aria-label="${esc(`Push activity over the last ${plural(p.days, 'day')}`)}">
   <div class="bars" role="img" aria-label="${esc(`${read} ${stamp(firstDay)} to ${stamp(lastDay)}.`)}">${bars}</div>
   <p class="pulse-axis"><span>${esc(stamp(firstDay))}</span><span>${esc(stamp(lastDay))}, today</span></p>
   <p class="pulse-read">${esc(read)}</p>
-  ${
-    p.newest
-      ? `<p class="pulse-last"><span class="dim">Latest commit, in ${esc(p.newest.repo)}, ${when(
-          p.newest.at,
-        )}:</span> <q>${esc(p.newest.message)}</q></p>`
-      : ''
-  }
+  ${newestLine(p)}
 </aside>`;
+  }
+
+  // --- graph: stacked, colour-coded, the same totals as the profile ----------
+  const present = KINDS.filter(([k]) => (p.parts[k] || 0) > 0);
+  const bars = p.series
+    .map((d) => {
+      const h = d.count ? Math.max(9, Math.round((d.count / peak) * 100)) : 2;
+      const segs = d.count
+        ? KINDS.filter(([k]) => d.parts[k] > 0)
+            .map(([k]) => `<span class="seg seg-${k}" style="flex-grow:${d.parts[k]}"></span>`)
+            .join('')
+        : '';
+      const data = KINDS.map(([k]) => `${k}:${d.parts?.[k] || 0}`).join(',');
+      const label = dayLabel(d);
+      return `<span class="tick${d.count ? '' : ' tick-none'}" style="height:${h}%" tabindex="0" role="listitem" aria-label="${esc(label)}" title="${esc(label)}" data-parts="${esc(data)}" data-day="${esc(stamp(d.day))}${d.partial ? ', today' : ''}">${segs}</span>`;
+    })
+    .join('');
+
+  const legend = present
+    .map(([k, name]) => `<span class="key"><span class="sw sw-${k}" aria-hidden="true"></span>${esc(name)}</span>`)
+    .join('');
+  const mix = present.map(([k, , one]) => plural(p.parts[k], one)).join(', ');
+  const read = `${plural(p.total, 'contribution')} in the last ${plural(p.days, 'day')}: ${mix}.${noneNote}`;
+
+  return `
+<aside class="pulse" aria-label="${esc(`Contribution activity over the last ${plural(p.days, 'day')}`)}">
+  <div class="bars bars-graph" role="list" aria-label="${esc(`${read} ${stamp(firstDay)} to ${stamp(lastDay)}.`)}">${bars}</div>
+  <p class="pulse-axis"><span>${esc(stamp(firstDay))}</span><span>${esc(stamp(lastDay))}, today</span></p>
+  <p class="pulse-read">${esc(read)}</p>
+  <p class="pulse-legend">${legend}</p>
+  ${newestLine(p)}
+</aside>`;
+}
+
+function newestLine(p) {
+  if (!p.newest) return '';
+  return `<p class="pulse-last"><span class="dim">Latest commit, in ${esc(p.newest.repo)}, ${when(p.newest.at)}:</span> <q>${esc(p.newest.message)}</q></p>`;
 }
 
 /* ---------------------------------------------------------------- recent */

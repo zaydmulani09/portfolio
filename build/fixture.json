@@ -360,124 +360,334 @@
     "series": [
       {
         "day": "2026-08-15",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 13,
+          "pr": 1,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-16",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 7,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-17",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 12,
+          "pr": 2,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-18",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 1
+        }
       },
       {
         "day": "2026-08-19",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-20",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-21",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 0,
+          "issue": 0,
+          "review": 1,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-22",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-23",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 14,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-24",
-        "count": 21
+        "count": 21,
+        "parts": {
+          "commit": 19,
+          "pr": 2,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-25",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-26",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 7,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-27",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 1
+        }
       },
       {
         "day": "2026-08-28",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-29",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-30",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 12,
+          "pr": 1,
+          "issue": 1,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-08-31",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 12,
+          "pr": 2,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-01",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-02",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 7,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-03",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-04",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 1,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-05",
-        "count": 14
+        "count": 14,
+        "parts": {
+          "commit": 13,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 1
+        }
       },
       {
         "day": "2026-09-06",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-07",
-        "count": 21
+        "count": 21,
+        "parts": {
+          "commit": 19,
+          "pr": 2,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-08",
-        "count": 0
+        "count": 0,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-09",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 1,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-10",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 6,
+          "pr": 0,
+          "issue": 1,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-11",
-        "count": 7
+        "count": 7,
+        "parts": {
+          "commit": 7,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-12",
-        "count": 21
+        "count": 21,
+        "parts": {
+          "commit": 21,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       },
       {
         "day": "2026-09-13",
         "count": 0,
-        "partial": true
+        "partial": true,
+        "parts": {
+          "commit": 0,
+          "pr": 0,
+          "issue": 0,
+          "review": 0,
+          "other": 0
+        }
       }
     ],
     "newest": {
@@ -487,6 +697,13 @@
     },
     "total": 217,
     "days": 30,
-    "unit": "commit"
+    "unit": "contribution",
+    "parts": {
+      "commit": 199,
+      "pr": 12,
+      "issue": 2,
+      "review": 1,
+      "other": 3
+    }
   }
 }
