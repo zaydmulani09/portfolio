@@ -16,7 +16,11 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  # A stuck Pages deploy holds this lock; with false, every later run queues
+  # behind it forever and gets auto-cancelled (wedged the site for 2 days on
+  # 2026-09-24). This is a static site, so interrupting a mid-flight deploy is
+  # harmless: the next run just rebuilds. true lets a new run clear a hung one.
+  cancel-in-progress: true
 
 jobs:
   deploy:
