@@ -22,3 +22,7 @@ CLAUDE.md
 DESIGN.md
 KICKOFF.md
 .claude/
+
+.taste-skill/
+build/cache.json
+build/cache-img/
