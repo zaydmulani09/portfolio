@@ -1,94 +1,132 @@
 {
-  "_readme": "Everything in this file is written by hand. Everything NOT in this file is fetched from an API at build time. Edit here; the page updates itself.",
   "identity": {
     "name": "Zayd Mulani",
     "handle": "zaydmulani09",
+    "hn": "zaydmulani",
     "location": "New Jersey, US",
-    "line": "Simulations that run on the GPU in a browser tab, and Rust command-line tools for people who work with language models.",
-    "status": "High-school senior. Applying to colleges, and looking for an internship or a research position for next summer.",
+    "line": "High-school senior in New Jersey. Rust tools, GPU simulations that run in a browser tab, and solo research with the predictions written down first.",
     "email": "zaydmulani@gmail.com",
+    "orcid": "0009-0008-8781-3245",
     "links": [
-      {
-        "label": "github",
-        "href": "https://github.com/zaydmulani09"
-      },
-      {
-        "label": "x.com",
-        "href": "https://x.com/zaydmulani"
-      },
-      {
-        "label": "dev.to",
-        "href": "https://dev.to/zaydmulani09"
-      },
-      {
-        "label": "linkedin",
-        "href": "https://www.linkedin.com/in/zayd-mulani-4a72a139b/"
-      }
+      { "label": "GitHub", "href": "https://github.com/zaydmulani09" },
+      { "label": "X", "href": "https://x.com/zaydmulani" },
+      { "label": "dev.to", "href": "https://dev.to/zaydmulani09" },
+      { "label": "LinkedIn", "href": "https://www.linkedin.com/in/zayd-mulani-4a72a139b/" },
+      { "label": "ORCID", "href": "https://orcid.org/0009-0008-8781-3245" },
+      { "label": "Zenodo", "href": "https://zenodo.org/search?q=metadata.creators.person_or_org.name%3A%22Mulani%2C%20Zayd%22" }
     ]
   },
-  "intro": [
-    "I'm Zayd Mulani, a high-school senior in New Jersey. I build simulations that run on the GPU inside a browser tab, and Rust command-line tools for people who work with language models.",
-    "Before this I worked as a data and ML engineering intern. I'm applying to colleges, and I'm looking for an internship or a research position for next summer."
-  ],
-  "projects": [
+  "hero": {
+    "sentence": "High-school senior in New Jersey. I build Rust tools and GPU simulations, and I publish research that says which of my predictions failed.",
+    "action": "Email me"
+  },
+  "seeking": "I'm applying to college for fall 2027, and I'm looking for a summer 2027 internship or a research spot.",
+  "intro": {
+    "lead": "I'm a high-school senior in New Jersey. I write Rust tools for people who work with language models and databases, run physics on the GPU in a browser tab, and publish research with the predictions fixed before the data."
+  },
+  "about": {
+    "paragraph": "I like software you can run yourself, read end to end and check. Most of what I build is a way to check something: whether a database gives the isolation level it claims, what a power cut leaves on disk, whether two runs of the same model file agree. Before this I worked as a data and ML engineering intern.",
+    "facts": [
+      ["Based in", "New Jersey"],
+      ["School", "High-school senior, class of 2027"],
+      ["Looking for", "A summer 2027 internship or a research spot"]
+    ],
+    "wins": [
+      { "what": "Most Technical Project, Secaucus Hackathon", "when": "2026" },
+      { "what": "Won the first ISCJ Hackathon, with my team", "when": "Feb 2025" }
+    ]
+  },
+  "research": {
+    "lead": "I work alone, on a laptop, on questions small enough to finish. Each study starts with a file of predictions committed before the first result exists, and the write-up reports every one of them, including the ones that failed.",
+    "specimen": {
+      "paper": "same-file-different-answers",
+      "heading": "Same file, different answers",
+      "text": "Same model file, same prompts, greedy decoding. Loading llama.cpp's AVX code path instead of its AVX2 path changed 41 of 600 MMLU answers from Qwen3-0.6B in Q4_K_M. No task's accuracy moved by more than 1.3 points, so a leaderboard would never show it.",
+      "a": { "word": "AVX2", "caption": "One run" },
+      "b": { "word": "AVX", "caption": "The same file, run again" }
+    }
+  },
+  "papers": [
     {
-      "repo": "mnemo",
-      "note": "A local-first memory layer for LLM pipelines. It extracts entities into a SQLite knowledge graph and scores context back into the next prompt. Works with Ollama, OpenAI, or any OpenAI-compatible endpoint.",
-      "crate": null
+      "slug": "same-file-different-answers",
+      "zenodo": "24055876",
+      "ssrn": "7683662",
+      "repo": "same-file-different-answers",
+      "short": "Same File, Different Answers",
+      "sub": "Execution-Equivalent Settings Change Benchmark Results of Quantized LLMs on CPUs",
+      "kind": "Experiment, pre-registered",
+      "key": "mulani2026samefile",
+      "gist": "How much of a benchmark gap between two quantized models comes from runtime settings that never touch the weights."
     },
     {
-      "repo": "slimeroute",
-      "note": "A slime mould simulation, up to a million agents on the GPU, that grows a transit network across cities you place and scores it against the minimum spanning tree.",
-      "embed": true
+      "slug": "could-software-be-conscious",
+      "zenodo": "23306276",
+      "ssrn": "7598779",
+      "repo": null,
+      "short": "Could Software Be Conscious?",
+      "sub": "A Theory-Comparative Review and a Falsifiable Ablation Program for a Minimal Artificial Agent",
+      "kind": "Review and research program",
+      "key": "mulani2026conscious",
+      "gist": "Six families of consciousness theories compared on what they imply for machines, and an ablation program that could falsify them on a small agent."
     },
     {
-      "repo": "seewifi",
-      "note": "A finite-difference time-domain solve of Maxwell's equations for your floor plan. Draw the walls, drop a router, drag it and watch the dead zones move.",
-      "embed": true
-    },
-    {
-      "repo": "phaedra",
-      "note": "A coverage-guided fuzzer for network protocols and binary formats. An LLM writes the seed corpus and nothing else."
-    },
-    {
-      "repo": "vecdb",
-      "note": "A hybrid vector database: HNSW for dense retrieval, BM25 for lexical search, fused at query time. One binary, no cloud."
-    },
-    {
-      "repo": "xorcery",
-      "note": "A superoptimiser that searches on the GPU for the shortest branchless program computing a function of 32-bit words, then checks the winner against all 2^32 inputs.",
-      "embed": true
-    },
-    {
-      "repo": "quivercam",
-      "note": "Motion amplification in the browser. It magnifies colour changes too small to see, so blood moving through a face becomes visible and a heart rate falls out of it.",
-      "embed": false,
-      "embedNote": "It keeps camera access to its own origin, so it will not run inside a frame here."
-    },
-    {
-      "repo": "mcp-gateway",
-      "note": "A reverse proxy for MCP servers: routing, auth, rate limiting and request logging in one binary."
-    },
-    {
-      "repo": "agentwatch",
-      "note": "A local token and cost tracker for Claude Code, Codex and Gemini CLI. It proxies locally, stores to SQLite and reads out in a TUI."
+      "slug": "anomaly-detection-small-datasets",
+      "zenodo": "24095103",
+      "ssrn": "6732518",
+      "repo": null,
+      "short": "Performance Tradeoffs Between Simple Statistical and Deep Learning Models in Small Datasets",
+      "sub": "A Comparative Analysis of Z-Score, Isolation Forest, and Neural Autoencoders for Anomaly Detection",
+      "kind": "Literature review",
+      "key": "mulani2026anomaly",
+      "gist": "When training data is scarce, which of a modified Z-score, an Isolation Forest and an autoencoder is worth using."
     }
   ],
-  "sections": {
-    "projects": "Projects",
-    "recent": "Recently pushed",
-    "writing": "Writing"
+  "ongoing": {
+    "slug": "retry-storm-stability",
+    "title": "Retry-Storm Stability in Microservice Dependency Graphs",
+    "sub": "A Static, Spectral Bound and Its Limits",
+    "status": "Draft. Not posted anywhere yet.",
+    "gist": "A bound on how far retries can amplify load across a whole service graph, computed from configuration alone.",
+    "body": [
+      "When a service is overloaded, its callers retry, and the retries add load. Earlier work analyzes this for one service calling another. Real systems are graphs, so I extended the model to any directed dependency graph with a retry budget on every edge, and with circuit breakers as part of the dynamics.",
+      "The result is a static check. Build a matrix from routing weights and retry budgets, both of which are in the config before anything is deployed. If its spectral radius is below 1, no load pattern can push any service past a ceiling you can compute. The proof is a Perron-Frobenius monotonicity argument with a Neumann series, the same shape as an epidemic threshold theorem for networks.",
+      "I checked the proof three ways: hand-derived fixtures, a second solver written with different numerical methods, and a randomized search of about 5,000 trials that tried to break the bound and did not. Then I looked for where it stops being useful. The bound is tight only when a node is saturated near the boundary. I first guessed that the duration of the surge was what mattered, tested it, and the guess was wrong.",
+      "The awkward finding is about real systems. I extracted the call graph of Train-Ticket, a public benchmark with 41 services, and it has no cycles, so its matrix has spectral radius 0 for any retry budget. On that system the theorem holds trivially. The draft says so."
+    ],
+    "theorem": {
+      "setup": "For every edge from service i to service j, let w be the fraction of i's traffic routed to j and k the retry budget on that edge. The worst-case amplification matrix has entries",
+      "claim": "If its spectral radius is below 1, then at every time t the load on every service satisfies",
+      "note": "The inequality holds entry by entry. The right-hand side depends only on configuration and on the external load."
+    },
+    "harness": ["simulate.py", "topology.py", "circuit_breaker.py", "experiments.py", "adversarial_search.py", "verify_reimplementation.py", "real_system_analysis.py", "test_regression.py"]
   },
-  "craft": {
-    "topic": "craft",
-    "heading": "Small things",
-    "lead": "Experiments, one sitting each. Anything on GitHub tagged craft appears here on the next build.",
-    "pageIntro": "Things too small to call projects. Most took an evening, and some do not work."
+  "featured": ["mnemo", "vecdb", "logjar", "jevgrep", "agent-seatbelt", "shrinkwatch", "plainspoken", "phaedra"],
+  "sims": [
+    { "repo": "slimeroute", "embed": true },
+    { "repo": "seewifi", "embed": true },
+    { "repo": "xorcery", "embed": true },
+    { "repo": "quivercam", "embed": false, "embedNote": "It keeps camera access to its own origin, so it opens in its own tab." }
+  ],
+  "shots": ["plainspoken", "stet", "shrinkwatch", "studio3svg"],
+  "shelfSkip": ["zaydmulani09", "ci-risk-test", "portfolio", "quiver", "aurora-frozen-lake", "fluid", "sonar-core", "personal-process-miner", "insta-assistant", "mini-sql-db", "custom-database-engine"],
+  "p4c": {
+    "role": "Founder, Pages for Change",
+    "site": "https://www.pagesforchange.org",
+    "source": "https://www.pagesforchange.org/llms.txt",
+    "text": "Pages for Change is a student nonprofit in South Brunswick, New Jersey. We collect the children's books families have outgrown, check and log every one, and get them to classrooms, shelters and families. I founded it in 2026 and run the team, the chapters and the book drives. I also built the site and the portal the chapters use to log each book.",
+    "event": "Our first event was the Cranbury Community Book Drive on October 24, 2026, run with hearts+homes.",
+    "sponsor": "Fiscally sponsored by The Hack Foundation, a 501(c)(3).",
+    "fallback": { "books": "2,000", "pages": "400,000", "drive": "1,633", "asOf": "2026-11-16" }
   },
   "version": {
-    "current": 3,
-    "label": "v.3",
+    "current": 4,
     "past": [
+      {
+        "n": 3,
+        "path": "/v/3/",
+        "retired": "2026-11-16",
+        "note": "One dark column: two paragraphs, a month of commit bars and a list of projects. Honest and plain, and it left the research out entirely."
+      },
       {
         "n": 1,
         "path": "/v/1/",
@@ -96,6 +134,5 @@
         "note": "Cream paper, terracotta accents, numbered section markers, and a star count I typed by hand that went stale within a week."
       }
     ]
-  },
-  "recentLimit": 8
+  }
 }
