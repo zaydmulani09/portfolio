@@ -1,31 +1,22 @@
-// Every network call lives here. Each one is allowed to fail: a failed source
-// is recorded in build.json and its section is left out of the page, but the
-// build still succeeds and deploys. A portfolio that 500s because GitHub is
-// slow is worse than one missing a table.
+import { createHash } from 'node:crypto';
 
 const UA = 'zayd.dpdns.org build script (+https://github.com/zaydmulani09/portfolio)';
 
 export const errors = [];
 export const fetched = [];
 
-// `absentOk`: a 404 from this URL is an answer, not a failure. A repo with no
-// releases 404s on /releases/latest, and a crate that was never published 404s
-// on crates.io. Neither makes the page stale, so neither is recorded as an
-// error; the caller just gets null.
-// `quiet`: a first attempt the caller will retry another way. A failure is
-// returned as null and not recorded, so only the retry can mark the page stale.
-async function json(url, { headers = {}, label, absentOk = false, quiet = false, method = 'GET', payload } = {}) {
+async function request(url, { headers = {}, label, absentOk = false, quiet = false, method = 'GET', payload, as = 'json', accept = 'application/json' } = {}) {
   const name = label || new URL(url).host;
   try {
     const res = await fetch(url, {
       method,
       body: payload,
-      headers: { 'user-agent': UA, accept: 'application/json', ...headers },
-      signal: AbortSignal.timeout(20000),
+      headers: { 'user-agent': UA, accept, ...headers },
+      signal: AbortSignal.timeout(25000),
     });
     if (res.status === 404 && absentOk) return null;
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const body = await res.json();
+    const body = as === 'json' ? await res.json() : as === 'text' ? await res.text() : Buffer.from(await res.arrayBuffer());
     fetched.push(name);
     return body;
   } catch (err) {
@@ -34,27 +25,58 @@ async function json(url, { headers = {}, label, absentOk = false, quiet = false,
   }
 }
 
-// House rule: no em dashes in copy on the site, including copy that arrives
-// from an API. GitHub descriptions, commit messages and post titles all go
-// through here; the README extractor below uses the same rule.
+const json = (url, opts) => request(url, opts);
+
+export async function pool(items, size, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(size, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await fn(items[i], i);
+      }
+    }),
+  );
+  return out;
+}
+
 export const undash = (s) =>
   String(s ?? '')
+    .replace(/(\d)\s*[—–]\s*(\d)/g, '$1-$2')
     .replace(/\s*[—–]\s*/g, ', ')
     .replace(/,\s*,/g, ',')
     .replace(/\s+/g, ' ')
     .trim();
 
-/* ---------------------------------------------------------------- github */
+export const undashHtml = (html) =>
+  String(html ?? '')
+    .split(/(<pre[\s\S]*?<\/pre>)/)
+    .map((part, i) =>
+      i % 2
+        ? part.replace(/[—–]|&mdash;|&ndash;|&#8212;|&#8211;/g, '-')
+        : part
+            .replace(/(\d)\s*(?:[—–]|&mdash;|&ndash;|&#8212;|&#8211;)\s*(\d)/g, '$1-$2')
+            .replace(/\s*(?:[—–]|&mdash;|&ndash;|&#8212;|&#8211;)\s*/g, ', '),
+    )
+    .join('');
+
+const bearer = (token) => (token ? { authorization: `Bearer ${token}` } : {});
 
 export async function github(user, token) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  const repos = await json(
-    `https://api.github.com/users/${user}/repos?per_page=100&sort=pushed&type=owner`,
-    { headers, label: 'github:repos' },
+  const pages = await Promise.all(
+    [1, 2].map((n) =>
+      json(`https://api.github.com/users/${user}/repos?per_page=100&sort=pushed&type=owner&page=${n}`, {
+        headers: bearer(token),
+        label: 'github:repos',
+        quiet: n > 1,
+      }),
+    ),
   );
-  if (!Array.isArray(repos)) return null;
-
-  return repos
+  if (!Array.isArray(pages[0])) return null;
+  return pages
+    .filter(Array.isArray)
+    .flat()
     .filter((r) => !r.fork && !r.archived && !r.private)
     .map((r) => ({
       name: r.name,
@@ -62,30 +84,31 @@ export async function github(user, token) {
       language: r.language || '',
       stars: r.stargazers_count,
       forks: r.forks_count,
-      openIssues: r.open_issues_count,
       pushedAt: r.pushed_at,
       createdAt: r.created_at,
       url: r.html_url,
       homepage: r.homepage || '',
       topics: r.topics || [],
-      license: r.license?.spdx_id || null,
+      license: r.license?.spdx_id && r.license.spdx_id !== 'NOASSERTION' ? r.license.spdx_id : null,
     }));
 }
 
-// Only called for the handful of featured repos, to keep the request count low.
+export async function profile(user, token) {
+  const u = await json(`https://api.github.com/users/${user}`, { headers: bearer(token), label: 'github:user' });
+  return u ? { followers: u.followers, publicRepos: u.public_repos, createdAt: u.created_at } : null;
+}
+
 export async function repoDetail(user, repo, token) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  const [release, commits] = await Promise.all([
-    // 404 here means the repo has never cut a release, which the page says in
-    // words. It is not a failed source.
-    json(`https://api.github.com/repos/${user}/${repo}/releases/latest`, {
+  const headers = bearer(token);
+  const [release, commits, readme] = await Promise.all([
+    json(`https://api.github.com/repos/${user}/${repo}/releases/latest`, { headers, label: `github:release:${repo}`, absentOk: true }),
+    json(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`, { headers, label: `github:commit:${repo}` }),
+    request(`https://api.github.com/repos/${user}/${repo}/readme`, {
       headers,
-      label: `github:release:${repo}`,
+      label: `github:readme:${repo}`,
       absentOk: true,
-    }),
-    json(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`, {
-      headers,
-      label: `github:commit:${repo}`,
+      as: 'text',
+      accept: 'application/vnd.github.html',
     }),
   ]);
   const head = Array.isArray(commits) ? commits[0] : null;
@@ -99,13 +122,10 @@ export async function repoDetail(user, repo, token) {
           url: head.html_url,
         }
       : null,
+    readme: readme || null,
   };
 }
 
-/* ---------------------------------------------------------------- vercel */
-
-// A project can carry several production aliases. Prefer a custom domain,
-// then the short `<project>.vercel.app`, and never a per-deployment hash URL.
 function pickAlias(aliases = []) {
   const usable = aliases.filter((a) => a && !a.includes('-git-') && !/-[a-z0-9]{9}-/.test(a));
   const custom = usable.find((a) => !a.endsWith('.vercel.app'));
@@ -115,16 +135,12 @@ function pickAlias(aliases = []) {
 
 export async function vercel(token, teamId) {
   if (!token) {
-    errors.push({ source: 'vercel', error: 'VERCEL_TOKEN not set; live section skipped' });
+    errors.push({ source: 'vercel', error: 'VERCEL_TOKEN not set' });
     return null;
   }
   const qs = teamId ? `?limit=100&teamId=${encodeURIComponent(teamId)}` : '?limit=100';
-  const body = await json(`https://api.vercel.com/v9/projects${qs}`, {
-    headers: { authorization: `Bearer ${token}` },
-    label: 'vercel:projects',
-  });
+  const body = await json(`https://api.vercel.com/v9/projects${qs}`, { headers: bearer(token), label: 'vercel:projects' });
   if (!body?.projects) return null;
-
   return body.projects
     .map((p) => {
       const prod = p.targets?.production;
@@ -132,149 +148,76 @@ export async function vercel(token, teamId) {
       return {
         name: p.name,
         repo: p.link?.type === 'github' ? p.link.repo : null,
-        repoUrl: p.link?.type === 'github' ? `https://github.com/${p.link.org}/${p.link.repo}` : null,
-        framework: p.framework || null,
         url: alias ? `https://${alias}` : null,
         state: prod?.readyState || null,
         deployedAt: prod?.createdAt ? new Date(prod.createdAt).toISOString() : null,
-        commit: prod?.meta?.githubCommitMessage?.split('\n')[0] || null,
       };
     })
     .filter((p) => p.url);
 }
 
-/* ---------------------------------------------------------------- dev.to */
+const slugify = (s) =>
+  String(s)
+    .toLowerCase()
+    .replace(/['’".]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .split('-')
+    .slice(0, 9)
+    .join('-');
 
 export async function devto(user) {
-  const posts = await json(`https://dev.to/api/articles?username=${user}&per_page=10`, {
-    label: 'devto:articles',
-  });
+  const posts = await json(`https://dev.to/api/articles?username=${user}&per_page=100`, { label: 'devto:articles' });
   if (!Array.isArray(posts)) return null;
-  return posts.map((p) => ({
-    title: undash(p.title),
-    url: p.url,
-    publishedAt: p.published_at,
-    reactions: p.public_reactions_count,
-    comments: p.comments_count,
-    readingMinutes: p.reading_time_minutes,
-  }));
+  const out = [];
+  for (const p of posts) {
+    let full = await json(`https://dev.to/api/articles/${p.id}`, { label: `devto:article:${p.id}`, quiet: true });
+    if (!full) {
+      await new Promise((r) => setTimeout(r, 2000));
+      full = await json(`https://dev.to/api/articles/${p.id}`, { label: `devto:article:${p.id}` });
+    }
+    out.push({
+      id: p.id,
+      slug: slugify(p.title),
+      title: undash(p.title),
+      description: undash(p.description),
+      url: p.url,
+      publishedAt: p.published_at,
+      reactions: p.public_reactions_count,
+      comments: p.comments_count,
+      minutes: p.reading_time_minutes,
+      tags: p.tag_list || [],
+      raw: full?.body_html || null,
+      html: null,
+      repos: [],
+    });
+    await new Promise((r) => setTimeout(r, 350));
+  }
+  return out;
 }
 
-/* ------------------------------------------------------------- crates.io */
-
 export async function crate(name) {
-  // A crate that is not on crates.io is a content.json problem, not an outage.
-  // The row just loses its download count; the build prints a warning.
   const body = await json(`https://crates.io/api/v1/crates/${name}`, { label: `crates:${name}`, absentOk: true });
   if (!body?.crate) return null;
   return {
     name: body.crate.name,
     downloads: body.crate.downloads,
-    recentDownloads: body.crate.recent_downloads,
     version: body.crate.max_stable_version || body.crate.max_version,
     url: `https://crates.io/crates/${body.crate.name}`,
   };
 }
 
-/* ---------------------------------------------------- readme fallback --- */
-
-// A lot of repos have a good one-line pitch at the top of the README and an
-// empty GitHub description field. Rather than keep those lines in two places,
-// pull the tagline out of the README and use it when the description is blank.
-function tagline(md) {
-  const lines = md
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<[^>]+>/g, '')
-    .split('\n')
-    .map((l) => l.trim());
-
-  const structural = (l) =>
-    /^(#{1,6}\s|>|\||-{3,}|={3,}|```)/.test(l) || // headings, rules, tables, fences
-    /^!?\[/.test(l) || // badges and images
-    /^[*_-]\s/.test(l); // list items
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line || structural(line)) continue;
-
-    // A hard-wrapped README puts one sentence across several physical lines.
-    // Take the whole paragraph, up to the next blank line, not just the first.
-    let para = line;
-    for (let j = i + 1; j < lines.length && lines[j] && !structural(lines[j]); j++) para += ` ${lines[j]}`;
-
-    const text = para
-      .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links to their text
-      .replace(/[*_`]/g, '')
-      // House rule: no em dashes in copy on the site, including copy lifted
-      // out of a README.
-      .replace(/\s*[\u2014\u2013]\s*/g, ', ')
-      .replace(/,\s*,/g, ',')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (text.length < 25) continue;
-    if (text.length <= 200) return text;
-
-    // Cut at the last sentence end that fits, rather than mid-word.
-    const cut = text.slice(0, 200);
-    const stop = cut.lastIndexOf('. ');
-    return stop > 60 ? cut.slice(0, stop + 1) : `${cut.trimEnd()}...`;
-  }
-  return '';
+export async function npm(name) {
+  const [meta, dl] = await Promise.all([
+    json(`https://registry.npmjs.org/${name}/latest`, { label: `npm:${name}`, absentOk: true }),
+    json(`https://api.npmjs.org/downloads/point/last-month/${name}`, { label: `npm:downloads:${name}`, absentOk: true, quiet: true }),
+  ]);
+  if (!meta?.version) return null;
+  return { name, version: meta.version, monthly: dl?.downloads ?? null, url: `https://www.npmjs.com/package/${name}` };
 }
 
-export async function readmeLines(user, repos, token) {
-  const out = {};
-  for (const repo of repos) {
-    try {
-      const res = await fetch(`https://api.github.com/repos/${user}/${repo}/readme`, {
-        headers: {
-          'user-agent': UA,
-          accept: 'application/vnd.github.raw',
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
-        },
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!res.ok) continue;
-      const line = tagline(await res.text());
-      if (line) out[repo] = line;
-    } catch {
-      // A missing README is not an error. The row renders without a note.
-    }
-  }
-  return out;
-}
-
-/* ------------------------------------------------------ recent activity */
-
-// A month of activity, one bar a day, plus whatever I last typed into a commit
-// message, quoted exactly as written. Unpolished commit messages are the point.
-//
-// The bars are the same numbers as the contribution graph on the GitHub
-// profile: GraphQL contributionsCollection, commits per day by author date,
-// across every repo, including work that was pushed weeks later from a repo
-// that was private at the time. That is what a visitor will compare against.
-//
-// The public events feed is only the fallback, and it is a much worse witness.
-// It counts pushes, not commits (a PushEvent payload is now just
-// `{ repository_id, push_id, ref, head, before }`), it never shows pushes to a
-// repo that was private when they happened, and the token Actions hands out
-// sees one short page of it. The strip says which unit it is showing, so a
-// fallback build says "pushes" and never dresses them up as commits.
-
-// GraphQL refuses unauthenticated calls, so this needs a token. Quiet: if it
-// fails, the events feed answers instead, and only that failure is a stale page.
 async function contributions(user, token, from, to) {
   if (!token) return null;
-  // The four contribution kinds GitHub itemises, plus the calendar total. The
-  // calendar is the authoritative daily number, the same one the profile graph
-  // draws; the typed connections say what each day was made of. Anything the
-  // calendar counts beyond the four kinds (private work this token cannot
-  // itemise, repositories created) is folded into "other" so the bar height
-  // still equals the profile graph. The typed connections cap at 100 nodes
-  // each, which is far above a month of issues, PRs or reviews here; if that
-  // ever overflows, the surplus also lands in "other" rather than being lost.
   const query = `query($user: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $user) {
       contributionsCollection(from: $from, to: $to) {
@@ -291,19 +234,14 @@ async function contributions(user, token, from, to) {
   const body = await json('https://api.github.com/graphql', {
     method: 'POST',
     payload: JSON.stringify({ query, variables: { user, from: new Date(from).toISOString(), to: new Date(to).toISOString() } }),
-    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    headers: { ...bearer(token), 'content-type': 'application/json' },
     label: 'github:contributions',
     quiet: true,
   });
   const cc = body?.data?.user?.contributionsCollection;
   const repos = cc?.commitContributionsByRepository;
-  if (!Array.isArray(repos) || !cc?.contributionCalendar) {
-    const why = body?.errors?.map((e) => e.message).join('; ') || 'no response';
-    console.log(`  contributions: unavailable (${why}), falling back to the events feed`);
-    return null;
-  }
+  if (!Array.isArray(repos) || !cc?.contributionCalendar) return null;
 
-  // day -> { commit, pr, issue, review }
   const byDay = new Map();
   const bump = (day, kind, n = 1) => {
     const e = byDay.get(day) || { commit: 0, pr: 0, issue: 0, review: 0 };
@@ -317,148 +255,43 @@ async function contributions(user, token, from, to) {
 
   const calByDay = new Map();
   for (const w of cc.contributionCalendar.weeks || []) for (const d of w.contributionDays || []) calByDay.set(d.date, d.contributionCount);
-
-  const total = [...calByDay.values()].reduce((a, b) => a + b, 0);
-  console.log(`  contributions: ${total} across commits, PRs, issues and reviews`);
   return { byDay, calByDay };
 }
 
-// The feed is public, so the token only buys rate limit, and the token Actions
-// hands out actually sees less: one short page ending weeks early, where an
-// unauthenticated call returns all three. So ask without the token first, and
-// only fall back to it if the shared runner IP is rate-limited. Pages are 100
-// events, capped at 300 or 90 days.
-async function publicEvents(user, token, cutoff, maxPages) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  let auth = false;
-  const page = async (n) => {
-    const url = `https://api.github.com/users/${user}/events/public?per_page=100&page=${n}`;
-    if (!auth) {
-      const open = await json(url, { label: 'github:events', quiet: Boolean(token) });
-      if (Array.isArray(open) || !token) return open;
-      auth = true;
-    }
-    return json(url, { headers, label: 'github:events' });
-  };
-
-  const events = [];
-  let exhausted = false; // the API ran out of events before the window did
-  const pages = [];
-  for (let n = 1; n <= maxPages; n++) {
-    const batch = await page(n);
-    if (!Array.isArray(batch)) {
-      if (n === 1) return null;
-      break;
-    }
-    pages.push(batch.length);
-    events.push(...batch);
-    // A short page means the feed ended. An empty page after a full one does
-    // not: the feed sometimes serves that, and the days it would have covered
-    // are unknown rather than quiet.
-    if (batch.length === 0) break;
-    if (batch.length < 100) exhausted = true;
-    if (exhausted || +new Date(batch[batch.length - 1].created_at) < cutoff) break;
-  }
-  console.log(
-    `  events: ${events.length} over ${pages.length} page(s) [${pages.join(', ')}], oldest ${
-      events.length ? events[events.length - 1].created_at.slice(0, 10) : 'none'
-    }, ${exhausted ? 'feed exhausted' : 'feed not exhausted'}, ${auth ? 'with token' : 'without token'}`,
-  );
-  return { events, exhausted };
-}
-
 export async function activity(user, token, days = 30) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-
-  // The last `days` UTC days ending today, like the graph on the profile.
-  // Today is only part of a day, so its bar is marked partial and it is never
-  // counted as a quiet day.
   const now = new Date();
   const todayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const cutoff = todayStart - (days - 1) * 86400000;
-
   const graph = await contributions(user, token, cutoff, +now);
-
-  // The feed is only needed when the graph did not answer.
-  const feed = graph ? null : await publicEvents(user, token, cutoff, 3);
-  if (!graph && !feed) return null;
-
-  const KINDS = ['commit', 'pr', 'issue', 'review', 'other'];
+  if (!graph) {
+    errors.push({ source: 'github:contributions', error: token ? 'no response' : 'needs a token' });
+    return null;
+  }
+  const kinds = ['commit', 'pr', 'issue', 'review', 'other'];
   const series = [];
-
-  if (graph) {
-    // The graph itemises each day. The calendar total is the profile-graph
-    // number and wins; the segments are the kinds we could name, with "other"
-    // absorbing anything the calendar counts beyond them.
-    for (let i = days - 1; i >= 0; i--) {
-      const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
-      const p = graph.byDay.get(day) || { commit: 0, pr: 0, issue: 0, review: 0 };
-      const typed = p.commit + p.pr + p.issue + p.review;
-      const cal = graph.calByDay.has(day) ? graph.calByDay.get(day) : typed;
-      const count = Math.max(cal, typed);
-      const parts = { commit: p.commit, pr: p.pr, issue: p.issue, review: p.review, other: Math.max(0, count - typed) };
-      series.push({ day, count, parts, ...(i === 0 ? { partial: true } : {}) });
-    }
-    const parts = KINDS.reduce((o, k) => ((o[k] = series.reduce((a, b) => a + b.parts[k], 0)), o), {});
-    return { series, unit: 'contribution', parts, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
-  }
-
-  // Fallback: the public events feed. It only knows pushes, and the copy never
-  // dresses a push up as a commit or a contribution.
-  const events = feed.events || [];
-  const byDay = new Map();
-  for (const e of events) {
-    if (e.type !== 'PushEvent' || +new Date(e.created_at) < cutoff) continue;
-    const day = new Date(e.created_at).toISOString().slice(0, 10);
-    byDay.set(day, (byDay.get(day) || 0) + 1);
-  }
-  // If the cap cut the feed off inside the window, the days before the oldest
-  // event are unknown, not quiet. Shorten the window to what was actually seen
-  // rather than draw empty days that may not have been.
-  let start = cutoff;
-  const oldest = events.length ? +new Date(events[events.length - 1].created_at) : null;
-  if (!feed.exhausted && oldest !== null && oldest > cutoff) start = oldest;
-
-  const first = new Date(start).toISOString().slice(0, 10);
   for (let i = days - 1; i >= 0; i--) {
     const day = new Date(todayStart - i * 86400000).toISOString().slice(0, 10);
-    if (day < first) continue;
-    series.push({ day, count: byDay.get(day) || 0, ...(i === 0 ? { partial: true } : {}) });
+    const p = graph.byDay.get(day) || { commit: 0, pr: 0, issue: 0, review: 0 };
+    const typed = p.commit + p.pr + p.issue + p.review;
+    const count = Math.max(graph.calByDay.get(day) ?? typed, typed);
+    series.push({ day, count, parts: { ...p, other: Math.max(0, count - typed) }, ...(i === 0 ? { partial: true } : {}) });
   }
-
-  return { series, unit: 'push', total: series.reduce((a, b) => a + b.count, 0), days: series.length };
+  const parts = Object.fromEntries(kinds.map((k) => [k, series.reduce((a, b) => a + b.parts[k], 0)]));
+  return { series, parts, total: series.reduce((a, b) => a + b.count, 0), days: series.length };
 }
 
-// The newest commit on the most recently pushed repo, quoted as written. The
-// repo list is sorted by push date and is fresh; the events feed lags by hours.
-export async function latestCommit(user, repo, token) {
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  const commits = await json(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`, {
-    headers,
-    label: `github:commit:${repo}`,
-  });
-  const head = Array.isArray(commits) ? commits[0] : null;
-  if (!head?.commit?.message) return null;
-  return {
-    message: undash(head.commit.message.split('\n')[0]),
-    repo,
-    at: head.commit.committer?.date || head.commit.author?.date || null,
-    url: head.html_url,
-  };
-}
-
-/* ------------------------------------------------- hacker news (algolia) */
-
-// Third-party evidence: threads other people voted on and argued in. Matched
-// by URL so a stranger with a similar name cannot end up on the page.
-export async function hackernews(user) {
-  const body = await json(
-    `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(user)}&tags=story&hitsPerPage=50`,
-    { label: 'hn:search' },
-  );
-  if (!body?.hits) return null;
-  return body.hits
-    .filter((h) => (h.url || '').includes(`/${user}/`) || h.author === user)
+export async function hackernews(user, hnUser) {
+  const [byUrl, byAuthor] = await Promise.all([
+    json(`https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(user)}&tags=story&hitsPerPage=50`, { label: 'hn:search' }),
+    json(`https://hn.algolia.com/api/v1/search?tags=story,author_${encodeURIComponent(hnUser)}&hitsPerPage=50`, { label: 'hn:author', quiet: true }),
+  ]);
+  if (!byUrl?.hits) return null;
+  const seen = new Map();
+  for (const h of [...byUrl.hits, ...(byAuthor?.hits || [])]) {
+    if (!((h.url || '').includes(`/${user}/`) || h.author === hnUser)) continue;
+    seen.set(h.objectID, h);
+  }
+  return [...seen.values()]
     .filter((h) => (h.points || 0) >= 2)
     .map((h) => ({
       title: undash(h.title),
@@ -470,4 +303,99 @@ export async function hackernews(user) {
     }))
     .sort((a, b) => b.points - a.points)
     .slice(0, 5);
+}
+
+const stripTags = (s) =>
+  String(s || '')
+    .replace(/<\/p>\s*<p>/g, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+
+export async function zenodo(id) {
+  const d = await json(`https://zenodo.org/api/records/${id}`, { label: `zenodo:${id}` });
+  const m = d?.metadata;
+  if (!m?.title) return null;
+  const file = (d.files || []).find((f) => f.key.endsWith('.pdf'));
+  return {
+    id: String(d.id),
+    doi: d.doi,
+    title: undash(m.title),
+    date: m.publication_date,
+    abstract: stripTags(m.description)
+      .split(/\n\n+/)
+      .map(undash)
+      .filter((p) => p && !/^Code, raw per-item outputs/.test(p)),
+    keywords: m.keywords || [],
+    license: m.license?.id || null,
+    pdf: file ? `https://zenodo.org/records/${d.id}/files/${file.key}?download=1` : null,
+    views: d.stats?.unique_views ?? null,
+    downloads: d.stats?.unique_downloads ?? null,
+    url: `https://zenodo.org/records/${d.id}`,
+  };
+}
+
+export async function crossrefDate(doi) {
+  const d = await json(`https://api.crossref.org/works/${encodeURIComponent(doi)}`, { label: `crossref:${doi}`, quiet: true });
+  return d?.message?.created?.['date-time'] || null;
+}
+
+export async function pagesForChange(url) {
+  const text = await request(url, { label: 'p4c:llms', as: 'text', accept: 'text/plain' });
+  if (!text) return null;
+  const n = String.raw`(\d{1,3}(?:,\d{3})*)`;
+  const books = text.match(new RegExp(`More than ${n} books`, 'i'))?.[1];
+  const pages = text.match(new RegExp(`about ${n} pages`, 'i'))?.[1];
+  const drive = text.match(new RegExp(`count reached ${n}`, 'i'))?.[1];
+  if (!books) {
+    errors.push({ source: 'p4c:llms', error: 'book count not found' });
+    return null;
+  }
+  return { books, pages: pages || null, drive: drive || null };
+}
+
+function imageSize(b) {
+  if (b.length > 24 && b.readUInt32BE(0) === 0x89504e47) return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  if (b.length > 10 && b.toString('ascii', 0, 3) === 'GIF') return [b.readUInt16LE(6), b.readUInt16LE(8)];
+  if (b.length > 30 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+    const kind = b.toString('ascii', 12, 16);
+    if (kind === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+    if (kind === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+    if (kind === 'VP8L') {
+      const n = b.readUInt32LE(21);
+      return [(n & 0x3fff) + 1, ((n >> 14) & 0x3fff) + 1];
+    }
+  }
+  if (b.length > 4 && b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) return null;
+      const marker = b[i + 1];
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)];
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+  }
+  return null;
+}
+
+const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/avif': 'avif' };
+
+export async function fetchImage(url) {
+  try {
+    const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'image/webp,image/png,image/jpeg,image/gif,image/svg+xml' }, signal: AbortSignal.timeout(25000) });
+    if (!res.ok) return null;
+    const type = (res.headers.get('content-type') || '').split(';')[0].trim();
+    const ext = EXT[type];
+    if (!ext) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 3_000_000) return null;
+    const size = ext === 'svg' ? null : imageSize(buf);
+    return { buf, name: `${createHash('sha1').update(buf).digest('hex').slice(0, 12)}.${ext}`, width: size?.[0] || null, height: size?.[1] || null };
+  } catch {
+    return null;
+  }
 }
