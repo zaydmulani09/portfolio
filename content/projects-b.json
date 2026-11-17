@@ -1,0 +1,286 @@
+[
+  {
+    "repo": "agent-seatbelt",
+    "kind": "tool",
+    "one": "Local MCP gateway that logs agent tool calls in plain English, asks before risky ones, and caps spending.",
+    "body": [
+      "Agent Seatbelt sits between an MCP agent, such as Claude Desktop or Claude Code, and the tools it calls. I built it for people who let an agent act on their behalf and want a record of what it did, a prompt before it spends, sends or deletes, and one STOP button. Everything stays on the local machine: no accounts, no cloud, no telemetry and no LLM calls.",
+      "Each wrapped server runs its own small stdio proxy, and the proxies share state with a dashboard on 127.0.0.1 through a config folder. Every call is checked for pause and runaway bursts, classified as read, write, money, send, delete, exec or unknown from MCP annotations, tool names and schemas, then run through rules, spending caps and a rate limit. The log is append-only SQLite with each row hash-chained to the previous one.",
+      "Timeline sentences come from templates, so no model or API key is involved. Secrets and card numbers are redacted before anything is stored. The repo runs 70+ unit, integration and security tests under npm test, and a demo command drives a scripted agent that tries to overspend, email strangers, delete files and loop."
+    ],
+    "facts": [
+      ["Tests", "70+ unit, integration and security tests"],
+      ["Approval timeout", "Unanswered for 120 seconds means denied"],
+      ["Node requirement", "Node 22.13 or newer"],
+      ["Dashboard sign-in", "random 192 bit token, bound to 127.0.0.1 only"]
+    ],
+    "limits": "It controls only the tool calls that pass through it, so it cannot see an agent's built-in shell, browser or file access, and tool classification is heuristic.",
+    "install": "npx -y github:zaydmulani09/agent-seatbelt init",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Tests: README, Development (npm test comment). Approval timeout: README, What you get, row 'Ask before it acts'. Node requirement: README, Quickstart. Dashboard sign-in: SECURITY.md, Dashboard hardening. Limits: README, Honest limits, and SECURITY.md, What Agent Seatbelt protects. Install: README, Quickstart. Not on npm: the README installs through npx github:. The repo homepage field points at the GitHub repo itself, so demo is null."
+  },
+  {
+    "repo": "shrinkwatch",
+    "kind": "app",
+    "one": "Chrome extension that finds groceries you rebuy that got smaller and prices the yearly cost.",
+    "body": [
+      "Shrinkwatch reads my own grocery order history from Amazon, Walmart, Instacart, Target and Kroger and finds the products I keep rebuying that shrank between purchases. I wanted a single dollar figure for shrinkflation instead of a vague feeling, so it reports the size drop and the extra money per year for the same amount of product. All of it runs on the device, with no server, account or analytics.",
+      "The core is DOM-free TypeScript. A size parser turns labels like 6 x 12 fl oz or 1 1/2 lb into grams, milliliters or a count. A matcher groups purchases by the store's product id, or by a fuzzy token match of at least 0.75 similarity on the name. The detector flags any size drop of 2% or more, using median prices per size so one sale does not fake an increase.",
+      "I cannot log into these stores, so every adapter is tested against fixture HTML I wrote, and one test strips every class attribute and expects identical output. The build fails if fetch, XMLHttpRequest, sendBeacon, WebSocket or EventSource appear in the extension, and a headless smoke test fails on any request that is not a local fixture."
+    ],
+    "facts": [
+      ["Shrink threshold", "size drop of 2% or more between purchases of the same product"],
+      ["Fuzzy name match", "at least 0.75 similarity"],
+      ["Stores", "Amazon (incl. Fresh), Walmart, Instacart, Target, Kroger: all fixture-tested"],
+      ["Extension permissions", "storage only"],
+      ["Scan older orders", "waits 5 to 8 seconds per page, up to 10 pages"]
+    ],
+    "limits": "Store adapters are tested against fixture HTML and are unverified on live accounts, so some stores may need a fix after real-world use.",
+    "install": null,
+    "links": { "demo": "https://zaydmulani09.github.io/shrinkwatch/", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Shrink threshold: README, What it does (Flags shrinks) and How detection works step 4. Fuzzy name match: README, How detection works step 2. Stores: README, Supported stores table. Extension permissions: README, Privacy. Scan older orders: README, Using it. Limits: README, Known limits and the note under Supported stores. Demo: README, Live demo line and repo homepage. Install is null because the README install is a multi-step load-unpacked procedure. The 10.4% and $148 headline in the README is sample data and is not used as a fact."
+  },
+  {
+    "repo": "plainspoken",
+    "kind": "app",
+    "one": "Web app that rewrites AI-sounding text into plain prose while locking facts and checking every claim.",
+    "body": [
+      "Plainspoken takes a draft that reads as machine-written and rewrites it paragraph by paragraph without changing what it says. I built it for people who want cleaner prose and proof that the meaning survived: the page shows a word diff, a before and after report of AI tells, and a meaning badge. It does not promise to beat AI detectors, and it never uses homoglyphs, invisible characters or planted typos.",
+      "Numbers, dates, names, URLs, quotes and code are locked first, and a draft that drops, alters or adds a locked span fails. A deterministic linter scores each paragraph against 38 patterns. The writer model drafts each paragraph twice, then a claims judge and code checks compare each draft with the source. Failed drafts get at most two repair rounds, and if the meaning still does not hold, the original paragraph is kept and marked.",
+      "The final evaluation on 42 texts missed its targets for tell reduction, claim recall, added claims and win or tie, and the README says so. The small pipeline judge passed every draft that the separate eval judge later marked as changing a claim. A locally run detector still flagged 41 of 42 rewrites as AI."
+    ],
+    "facts": [
+      ["Tell reduction (pooled)", "45.2% (4.41 to 2.42 per 100 words); target 80% or more, not met"],
+      ["Claim recall", "85.7% (611 of 713 kept; 95 changed, 7 missing); target 98% or more, not met"],
+      ["Added claims", "46, in 21 of 42 texts; target 0, not met"],
+      ["Win or tie against the original", "73.8% (16 win, 15 tie, 11 loss); target 85% or more, not met"],
+      ["TMR AI text detector", "flagged 42 of 42 originals and 41 of 42 rewrites as AI"]
+    ],
+    "limits": "On its own final evaluation it missed the targets for tell reduction, claim recall, added claims and win or tie, and it does not get text past the one detector that was measured.",
+    "install": null,
+    "links": { "demo": "https://plainspoken-app.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "All four evaluation facts: README, Evaluation, table 'Final run, 2026-10-31'. Detector fact: README, Detector. Limits: README, Evaluation ('Missed targets' paragraph) and Detector. The 38 patterns and two repair rounds: README, How it works steps 3 and 7. Demo: README, Live line and repo homepage. Install is null because running it needs a clone, npm ci and an API key in .env.local."
+  },
+  {
+    "repo": "causality-cage",
+    "kind": "tool",
+    "one": "CLI that replays a failing browser session and reports the minimal set of conditions that causes the bug.",
+    "body": [
+      "cage takes a failing and a passing recording of the same browser flow and tells me which differences between them cause the failure. I built it for bugs that only show up under a combination of conditions, such as a null API field together with a slow response. The output is a plain-English claim, a truth table it measured, and a standalone Playwright regression test.",
+      "It aligns the two sessions' API exchanges and turns every difference into a factor: a JSON leaf, status, header, latency, response order, storage key, cookie or environment setting. A gate replays all-failing and all-passing values 5 times each. Hierarchical delta debugging then narrows from endpoints to sub-objects to fields, replaying each configuration in a fresh browser context. The minimal set is re-run with every leave-one-out, and in-between failure rates switch to a sequential probability ratio test.",
+      "The bench plants bugs B0 to B8 plus a demo in an example shop and got an exact match on 10/10. I also tried it on a real issue in the RealWorld React frontend, where it named a stale token and the API rejecting /user and /articles/feed in 19 experiments. That run exposed a redaction leak and the need for failure signatures, and both are fixed."
+    ],
+    "facts": [
+      ["Bench, planted bugs", "exact match: 10/10"],
+      ["Median time per replay run", "0.75 s"],
+      ["Demo bug (AND of body + latency)", "2 factors, 31 experiments, 31.3 s"],
+      ["Real bug, RealWorld issue #187", "full chain in 19 experiments (25.1 s)"],
+      ["Gate on the demo run", "all-observed failed 5/5, all-neutral failed 0/5"]
+    ],
+    "limits": "A reported set is necessary and sufficient only within the modeled factors, and server-side state, WebSockets, IndexedDB, service workers, multi-tab flows and non-Chromium browsers are not modeled.",
+    "install": "npm install -g causality-cage",
+    "links": { "demo": null, "crate": null, "npm": "causality-cage", "docs": null },
+    "sourceNotes": "Bench match and median time: README, Measured: pnpm bench (last line of the pasted table). Demo bug and gate: README, transcript under the title. Real bug: README, Tried on a real bug. Limits: README, Scope of the claim, and docs/limits.md, Not modeled. Install: README, Install. npm: README install command; npm view causality-cage returned version 0.1.2."
+  },
+  {
+    "repo": "xorcery",
+    "kind": "tool",
+    "one": "WebGPU superoptimizer that finds the shortest branchless program for a function of 32-bit words.",
+    "body": [
+      "xorcery takes a C expression over 32-bit words and searches every straight-line program over the ops I allow, shortest first, on the GPU in the browser. I built it to see whether brute force could rediscover the bit tricks in Hacker's Delight. It returns the shortest program in the chosen instruction set and, for one-input functions, proves it by evaluating all 4,294,967,296 inputs.",
+      "A program is a mixed-radix number, one digit per instruction, and only dead-code-free programs in a canonical instruction order are enumerated. A generated WGSL compute shader gives each workgroup one prefix, evaluates it on 32 samples, and runs the last instruction's loop with an early exit on the first mismatch. Survivors are screened on the CPU, counterexamples replace sample slots, and the winner is verified on the GPU. The last instruction's constant is solved from the samples.",
+      "While I was building it, the Intel Iris Xe D3D12 driver compiled countOneBits(~x & (x - 1)) to x. The GPU now uses bit-trick versions of popcnt, clz, ctz and brev, every op is self-tested against the CPU at startup, and each verification is spot-checked on 512 inputs. The search found a 3-op power-of-two test where the textbook uses 4."
+    ],
+    "facts": [
+      ["Search rate, Intel Iris Xe", "~4.4 billion programs/s at length 5"],
+      ["Is power of two (P18)", "3 ops, textbook 4: t = -x; (x ^ t) < t"],
+      ["Zero byte in word (0/1)", "4 ops, textbook 5"],
+      ["P19 exchange bit fields", "found at length 6 after 101,760,512,958 candidates (8.6 min on the Iris Xe)"],
+      ["Proof of abs", "all 4,294,967,296 inputs (190 ms on an Intel Iris Xe)"]
+    ],
+    "limits": "Minimality holds only for the chosen instruction set and constant pool, two- and three-input results are verified on billions of inputs but not proved, and length 7 is out of reach for brute force.",
+    "install": "deno task cli --preset p18 --json",
+    "links": { "demo": "https://xorcery.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Search rate: README, How it works, 3. The GPU kernel (last paragraph). P18, zero byte and P19: README, What it found table and Benchmark table. Proof of abs: README, code block under the intro. Driver miscompile and 512-input spot check: README, 4. Screening and verification. Limits: README, Limitations. Install: README, Command line (trailing comment removed; needs a checkout and Deno). Demo: README, Live line and repo homepage."
+  },
+  {
+    "repo": "slimeroute",
+    "kind": "simulation",
+    "one": "GPU Physarum-style agent simulation that grows a transit network between cities and scores it against the MST.",
+    "body": [
+      "SlimeRoute simulates a slime mold with up to a million agents on the GPU. I drop cities on a map, the agents explore, reinforce busy veins and starve the rest, and a network settles. I wanted to compare what the simulation grows against the minimum spanning tree an engineer minimizing cost would draw. The tree is always cheaper, and the grown network is almost always more fault-tolerant and more direct because it keeps a few redundant loops.",
+      "Agents live in an RGBA32F texture, one texel each, and the trail is an R16F texture. Each substep runs three WebGL2 passes: every agent samples three angled sensors and steers toward the strongest, an additive POINTS draw deposits trail, and a 3x3 blur with decay diffuses it. Network extraction runs on the CPU: candidate links come from the Gabriel graph, and a link is kept only if a continuous vein runs along it.",
+      "This is an agent approximation of Physarum. It does not implement the continuum tube-adaptation model of the 2010 Tokyo rail paper, and I do not claim it reproduces the biology exactly. One portability problem: RGBA32F is not color-renderable on some integrated GPUs, so readbacks use RGBA16F and decode half-floats in JavaScript when needed."
+    ],
+    "facts": [
+      ["Agent counts", "262 k / 590 k / 1 M, selectable"],
+      ["Bundle size", "~18 KB gzipped, no runtime dependencies"],
+      ["Terrain mask in the share URL", "packed 64x64"]
+    ],
+    "limits": "It is an agent approximation of Physarum and does not use the continuum tube-adaptation model, and the extracted graph depends on the Gabriel candidate set and a continuity threshold.",
+    "install": "npm install && npm run dev",
+    "links": { "demo": "https://slimeroute.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "All three facts: README, Engineering notes. Mechanism: README, How it works. Limits: README, Limitations. Install: README, Run it (two lines joined with &&; needs a clone). Demo: README, Live demo link and repo homepage. The README gives no measured scores for fault tolerance or detour, so none are listed."
+  },
+  {
+    "repo": "seewifi",
+    "kind": "simulation",
+    "one": "Browser 2D FDTD simulation of WiFi waves through a floor plan you draw, running on WebGL2.",
+    "body": [
+      "seewifi lets me draw a floor plan, drop a router and watch a 2D electromagnetic simulation of the signal moving through the rooms. I built it for anyone deciding where a router should go, and to show where the usual distance-based heatmap is wrong. There is no account, upload or server, and the whole floor plan fits in the share link.",
+      "Each frame is a 2D finite-difference time-domain solve of Maxwell's curl equations, TMz polarization on a Yee lattice, run as two WebGL2 fragment passes per time step. Walls use permittivity and conductivity from ITU-R P.2040, metal is a perfect electric conductor, and an absorbing layer terminates the domain. The best-spot search uses Lorentz reciprocity: one solve per phone position across a lattice of about 20 points instead of one per router position.",
+      "It simulates a horizontal or vertical slice of a 3D world. Plan view has no floor or ceiling bounce, no antenna pattern, and no furniture or people beyond what is drawn. The shapes of shadows, diffraction and standing-wave fringes come from the solver. The dBm numbers are an estimate, calibrated so a router reads -30 dBm at 1 m."
+    ],
+    "facts": [
+      ["Grid", "typically ~1 million cells at 12 cells per wavelength for 2.4 GHz"],
+      ["Time step", "~30 picoseconds"],
+      ["Calibration", "router reads -30 dBm at 1 m, corrected from cylindrical (2D) to spherical (3D) spreading"],
+      ["Placement search", "one solve per phone position, a lattice of ~20 points"]
+    ],
+    "limits": "It is a 2D slice of a 3D world with no floor or ceiling bounce in plan view and no antenna pattern, so the dBm numbers are an estimate.",
+    "install": "npm install && npm run dev",
+    "links": { "demo": "https://seewifi.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Grid, time step and calibration: README, What it actually computes. Placement search: README, Finding the best spot. Limits: README, What it is not. Install: README, Running it (two lines joined with &&; needs a clone). Demo: README, first lines. The repo homepage field is empty, so the demo URL comes from the README only."
+  },
+  {
+    "repo": "quivercam",
+    "kind": "app",
+    "one": "Browser motion microscope that amplifies subtle color and motion in live video and reads heart rate.",
+    "body": [
+      "quiver amplifies color and motion changes in live webcam video that are too small to see: blood pulsing in a face, a chest breathing, a table trembling under a laptop fan. It also estimates heart rate from the face without contact. I built it as a from-scratch browser version of published methods. Everything runs on the GPU, and the page makes zero network requests after it loads.",
+      "The pipeline reimplements Eulerian Video Magnification on WebGL2: video is converted to YIQ, built into a Gaussian or Laplacian pyramid, band-passed per level with a temporal IIR filter made of two first-order low-passes, scaled, collapsed and added back to the full-resolution frame. Heart rate comes from three rPPG projections run in parallel, POS, CHROM and normalized green, each through a band-pass, a Hann window and a 2048-point FFT.",
+      "The DSP has no dependencies and is unit tested in Node, and a dev-only synthetic camera with a known 72 bpm pulse exercises the whole pipeline headless. A motion gate fades the gain toward 20 % when the scene moves, because amplifying a moving edge produces blurry ghosts. It is not a medical device."
+    ],
+    "facts": [
+      ["Pulse mode", "0.7 to 2.5 Hz band, Gaussian / color EVM, α = 60"],
+      ["Heart-rate estimate", "dominant peak between 42 and 180 bpm"],
+      ["Spectrum", "1.6 s sliding window, 4th-order band-pass, 2048-point FFT"],
+      ["Bundle size", "~16 KB of JavaScript gzipped, zero runtime dependencies"],
+      ["Recording", "MediaRecorder, up to 15 s"]
+    ],
+    "limits": "Webcam heart rate is typically within a few bpm of a chest strap in good, even light and much worse in dim light, with head motion, heavy makeup or very dark skin, and it is not a medical device.",
+    "install": "npm install && npm run dev",
+    "links": { "demo": "https://quivercam.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Pulse mode: README, What it does table. Heart-rate estimate and spectrum: README, How it works, Heart rate paragraph. Bundle size: README, Project layout (last line). Recording: README, What it does, Outputs. Limits: README, Honest limits. Install: README, Run it (two lines joined with &&; needs a clone). Demo: README, Live line. The README titles the project 'quiver'; quivercam is the repo name. The README uses British spelling for 'color'; it is written in American spelling here."
+  },
+  {
+    "repo": "studio3svg",
+    "kind": "tool",
+    "one": "Converter that reads Silhouette Studio .studio3 files directly and writes the cut lines as SVG.",
+    "body": [
+      "The free edition of Silhouette Studio saves designs only as .studio3, and SVG export needs the paid Business Edition. The usual workaround is a screenshot traced in Inkscape. I built studio3svg to read the file directly and write the cut lines as an SVG in millimeters, ready for Inkscape, Illustrator, LightBurn or another cutter's software. It ships as a CLI, a library and a web app that never uploads the file.",
+      "parseStudio3 returns the page size and a list of shapes, each a path of subpaths whose points carry in and out handles as offsets in mm. toSvg renders that document fitted to the page or cropped to the shapes. It reads shapes, freehand lines, text as letter outlines, shapes inside groups, and the preview image stored in each file. It needs Node.js 22 or newer and has no dependencies.",
+      "I checked it three ways. On 7 card templates with published sizes, every card matches to 0.02 mm. Each file stores a preview rendered by Silhouette Studio, and decoded outlines must land on that preview's ink: 224 of 225 comparable files pass. Truncation at every length and 2 000 seeded random corruptions give a clean parse or a Studio3Error, never a crash or hang."
+    ],
+    "facts": [
+      ["Ground truth", "7 card templates, every card matches to 0.02 mm"],
+      ["Preview differential", "224 of 225 comparable files pass"],
+      ["Malformed input", "2 000 seeded random corruptions, never a crash or hang"],
+      ["Runtime", "Node.js 22 or newer, no dependencies"]
+    ],
+    "limits": "It does not yet read colors, line styles, layer names and visibility, raster images, editable text, generated effect output, or files older than the Studio 5 format.",
+    "install": "npx github:zaydmulani09/studio3svg design.studio3",
+    "links": { "demo": "https://zaydmulani09.github.io/studio3svg/", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Ground truth, preview differential and malformed input: README, How it was checked (TESTING.md has the per-corpus breakdown). Runtime: README, Command line. Limits: README, What it reads ('Not yet' paragraph). Install: README, Command line. Demo: README, Web app line and repo homepage. Not on npm: the README installs through npx github:."
+  },
+  {
+    "repo": "stet",
+    "kind": "app",
+    "one": "College essay workspace that gives rubric feedback tied to exact quotes and never rewrites the essay.",
+    "body": [
+      "Stet is a workspace for college application essays. I paste a draft, pick the prompt, and get an editor's read: what is working, what to fix first, and where my own voice is strongest. I built it because I wanted feedback that points at a specific sentence and help that leaves the words mine. It gives no numeric score, no admission odds and no AI probability.",
+      "The model must quote the essay word for word, and code verifies each quote against the draft before it is shown. Quotes that are not in the draft are discarded and counted. Notes are anchored to passages in a CodeMirror 6 editor and move as I type. The stack is Next.js 16, the Vercel AI SDK with Groq models, Zod, and Postgres on Supabase, with Vitest and PGlite for in-process database tests.",
+      "A smoke script against production passed 22/22 checks, including a live review in about 6 s. One bug appeared only in production: a timezone hydration mismatch between server UTC and browser local time. Ratings and severities can vary between runs, so each review names its model."
+    ],
+    "facts": [
+      ["Production smoke test", "22/22 checks passed"],
+      ["Prompt library", "68 prompts, official wording"],
+      ["Rubric", "up to 20 rubric dimensions with written level descriptors"],
+      ["Free Groq tier", "8,000 tokens/minute per model, 1,000 requests/day"]
+    ],
+    "limits": "It runs on the free Groq tier, has no password reset, and ratings and severities can vary between runs.",
+    "install": null,
+    "links": { "demo": "https://stet-essay.vercel.app", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Production smoke test: docs/PROGRESS.md, Deployment. Prompt library: docs/PROGRESS.md, Implemented and verified table. Rubric: README, What it does. Free Groq tier and limits: docs/PROGRESS.md, Known limits. Stack: README, Stack. Demo: README, Live line and repo homepage. Install is null because local setup needs a database URL, a Groq key and a migration step."
+  },
+  {
+    "repo": "ghost",
+    "kind": "app",
+    "one": "Single HTML file that runs a quantized LLM in the browser through WebAssembly, with no install or API key.",
+    "body": [
+      "ghost is a chat page that runs a small language model inside the browser tab. I built it for anyone who wants a local assistant without installing anything, getting an API key or owning a GPU. I open the link, pick a model and chat. Models download once, are cached by the browser, and the page works offline after that. No data leaves the device.",
+      "Inference runs through wllama, a WebAssembly binding for llama.cpp, on GGUF quantized models loaded from HuggingFace and stored in the browser's Cache API. Dropping a .txt or .pdf onto the chat embeds it and retrieves relevant chunks locally, with PDF.js for text extraction. Voice input uses the Web Speech API. The whole thing is vanilla JS ES modules in one HTML file plus a service worker, with no build step."
+    ],
+    "facts": [
+      ["Qwen2.5 1.5B", "1.1 GB, ~3 tok/s"],
+      ["Qwen2 0.5B", "400 MB, ~8 tok/s"],
+      ["TinyLlama 1.1B", "670 MB, ~5 tok/s"]
+    ],
+    "limits": null,
+    "install": "node server.js",
+    "links": { "demo": "https://zaydmulani09.github.io/ghost/ghost.html", "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "All three facts: README, models table (the README does not say what hardware the speeds were measured on). Mechanism: README, how it works and stack. Install: README, local dev. Demo: README, try it. Limits is null because the README states no limitations. The README is thin, so there is no third paragraph."
+  },
+  {
+    "repo": "uno-model",
+    "kind": "research",
+    "one": "Pre-registered benchmarks of ternary versus 4-bit LLM quantization on an Arduino UNO Q.",
+    "body": [
+      "The UNO Q has four Cortex-A53 cores and no dot-product instructions, so every int8 dot product runs as plain NEON multiply-adds. I wanted to know whether a ternary quantization could beat 4-bit for small language models on that board. Each stage has a pre-registration file committed before the results, with fixed pass and fail gates, and a report that records which gates failed.",
+      "Throughput is measured with llama-bench on the board, using llama.cpp cross-compiled with zig and pushed over USB ADB. Quality is measured on a PC with a frozen set of MMLU, GSM8K and TriviaQA questions under greedy decoding. In stage 1b I added a new llama.cpp weight type, TQ2_0_G128: 128 ternary weights in 32 bytes of 2-bit codes plus one fp16 scale, with a NEON kernel that avoids dotprod.",
+      "The first MMLU bar came from 200 questions, where Bonsai scored 54.0. On 1000 questions it scored 46.9, so the target could not pass and stays recorded as a fail. A vocabulary restriction failed its gate twice: first because the token set had no newline token, then because rare proper nouns lost their single token."
+    ],
+    "facts": [
+      ["G1, stage 0", "PASS: Qwen3-0.6B TQ2_0 14.02 tok/s vs Q4_0 9.76 tok/s, +43.7%"],
+      ["G2, stage 1", "FAIL: Bonsai TQ2_0 is 2.05x faster but MMLU 50.5 misses 51.0 by one question"],
+      ["G4, stage 1b", "PASS: TQ2_0_G128 6.68 tok/s = 1.70x PQ2_0, 197/197 tensors bit-identical"],
+      ["Target T, stage 1b", "FAIL: MMLU 46.8 on 1000 questions, bar was 51.0"],
+      ["Rule R, stage 1c", "PASS: 6.66 tok/s vs Gemma 3 1B 6.22, MMLU 46.8 vs 38.4, GSM8K 62.7 vs 12.0"]
+    ],
+    "limits": "Speed comes from one board at 4 threads with 64-token contexts, quality was measured on a PC, and the raw-completion eval can understate instruction-tuned baselines such as Gemma.",
+    "install": null,
+    "links": { "demo": null, "crate": null, "npm": null, "docs": "https://huggingface.co/zaydmulani/Ternary-Bonsai-1.7B-TQ2_0_G128" },
+    "sourceNotes": "G1: REPORT.md, first line and Rule G1. G2: REPORT2.md, gate table. G4 and Target T: REPORT3.md, gate table and Lossless conversion. Rule R: REPORT4.md, Rule R table. The 54.0 versus 46.9 MMLU explanation: REPORT3.md, 'Why T can't pass'. Vocabulary failures: REPORT2.md, Vocabulary restriction (G3), and REPORT3.md, G5. Limits: release/MODEL_CARD.md, Honest limits, and REPORT4.md, 'Raw completion understates instruction-tuned baselines'. The docs link is the Hugging Face model named in the README, used here because there is no demo. README itself is four lines; details come from REPORT*.md and PREREG*.md."
+  },
+  {
+    "repo": "ca-unclaimed-nonprofits",
+    "kind": "data",
+    "one": "Exact-match join of California's unclaimed property file to IRS-registered California nonprofits.",
+    "body": [
+      "California's State Controller publishes its unclaimed property database as CSV, and the IRS publishes every tax-exempt organization in the state. I matched the two to find money the state is holding for nonprofits. Using the state file dated 2026-11-04, the match finds $14,223,357 owed to 5,055 organizations across 9,963 properties. The published CSV has one row per organization with the state property IDs, so anyone can look a claim up.",
+      "Names are uppercased, & becomes AND, punctuation is dropped, and words like INC, CORP, LLC and THE are removed. A property counts only when its owner name equals an IRS organization name and the ZIP matches (tier A) or the city matches (tier B). Nothing is fuzzy. The script uses only the Python standard library and takes about 10 minutes on the $100+ files.",
+      "I audited a random sample of 150 matches: 48% agree with the IRS street address or PO box, 60% for ZIP matches and 6% for city-only matches. Recall is low, because the state stores abbreviated and truncated names. A keyword scan showed the exact match caught 17% of food bank dollars, so the $14.2M is a floor."
+    ],
+    "facts": [
+      ["Name matches and ZIP or city matches", "5,055 organizations, 9,963 properties, $14,223,357"],
+      ["Of which 501(c)(3)", "4,359 organizations, $12,124,971"],
+      ["Of which no claim pending", "8,979 properties, $11,485,697"],
+      ["Precision sample", "150 matches, 48% agree with the IRS street address or PO box"],
+      ["Recall check, share of dollars found", "food banks 17%, Make-A-Wish 1%, children's hospitals 8%"]
+    ],
+    "limits": "Recall is low because the state stores abbreviated, truncated and chapter-level names, and only 48% of a 150-match sample agrees with the IRS street address or PO box.",
+    "install": "py -3 analysis/match.py <raw_dir> <out_dir>",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "First three facts: README, results table under the intro. Precision sample and recall check: README, How good is it (Precision and Recall is low bullets). Limits: same section. Install: README, Re-running. The README brackets precision at 48% to 97% and says the upper end is the author's reading, so only the checked 48% is listed."
+  },
+  {
+    "repo": "driftcheck",
+    "kind": "tool",
+    "one": "Static scanner that flags imports in public LangChain tutorial repos broken by LangChain 1.0.",
+    "body": [
+      "Following a LangChain tutorial from 2023 often fails at the import lines, because LangChain 1.0 moved names into other packages. I built driftcheck to measure how widespread that is. It scans public tutorial repos and reports which imports no longer resolve. Across 49 repos, 67% have at least one broken import, and for repos last pushed in 2023 it is 95%.",
+      "driftcheck parses each repo's Python and Jupyter code with the standard-library ast module and matches imports against a data-driven ruleset of LangChain 1.0 namespace changes. Broken means the import path no longer resolves because the name moved to a package such as langchain_openai or langchain_community. Deprecated means it still imports from a deprecated path. Each import is counted once per file, and adding a rule is a data change."
+    ],
+    "facts": [
+      ["All resolved repos", "33 of 49 broken (67%)"],
+      ["Pushed in 2023", "20 of 21 broken (95%)"],
+      ["Pushed in 2024", "13 of 28 broken (46%)"],
+      ["Most-starred tutorials tested", "10 of the 12 have at least one broken import"],
+      ["Most common broken import", "langchain.vectorstores, 23 repos"]
+    ],
+    "limits": "It is import-level static analysis of public GitHub tutorial repos, so it does not test whether a repo runs and does not cover blog posts or video-only tutorials.",
+    "install": "git clone https://github.com/zaydmulani09/driftcheck && cd driftcheck && pip install -e . && python -m driftcheck --report",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Cohort facts: README, The recency cliff table. Most-starred fact: README, bold paragraph under the hero image. Most common broken import: README, What breaks most often table. Limits: README, Scope & limitations. Install: README, Quickstart (four lines joined with &&; the optional GITHUB_TOKEN export is left out). The generated REPORT.md is dated 2026-08-12."
+  }
+]
