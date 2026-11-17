@@ -1,0 +1,194 @@
+[
+ {
+  "file": "sims/slimeroute-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 74684,
+  "alt": "SlimeRoute app with glowing green slime trails and cream network lines linking labeled Tokyo area stations inside a dark circular dish, beside a control panel with a slime versus shortest tree comparison table.",
+  "source": "https://slimeroute.vercel.app"
+ },
+ {
+  "file": "sims/slimeroute-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 29410,
+  "alt": "SlimeRoute app with glowing green slime trails and cream network lines linking labeled Tokyo area stations inside a dark circular dish, beside a control panel with a slime versus shortest tree comparison table.",
+  "source": "https://slimeroute.vercel.app"
+ },
+ {
+  "file": "sims/seewifi-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 100914,
+  "alt": "seewifi app showing a floor plan of an apartment filled with a green, orange and purple signal strength pattern spreading from a router in the bottom right room, with dBm labels and a material toolbar below.",
+  "source": "https://seewifi.vercel.app"
+ },
+ {
+  "file": "sims/seewifi-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 34002,
+  "alt": "seewifi app showing a floor plan of an apartment filled with a green, orange and purple signal strength pattern spreading from a router in the bottom right room, with dBm labels and a material toolbar below.",
+  "source": "https://seewifi.vercel.app"
+ },
+ {
+  "file": "sims/xorcery-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 71746,
+  "alt": "xorcery app with the spec (int)x < 0 ? -x : x on the left and a result panel on the right showing a 3 instruction program, a green proved banner, four alternatives and generated C code.",
+  "source": "https://xorcery.vercel.app"
+ },
+ {
+  "file": "sims/xorcery-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 23056,
+  "alt": "xorcery app with the spec (int)x < 0 ? -x : x on the left and a result panel on the right showing a 3 instruction program, a green proved banner, four alternatives and generated C code.",
+  "source": "https://xorcery.vercel.app"
+ },
+ {
+  "file": "sims/quivercam-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 47578,
+  "alt": "quiver landing screen on a dark background with the headline \"Your webcam can see your heartbeat.\", Start camera and Use a video file buttons, and an empty heart rate panel reading \"waiting for signal\".",
+  "source": "https://quivercam.vercel.app"
+ },
+ {
+  "file": "sims/quivercam-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 19004,
+  "alt": "quiver landing screen on a dark background with the headline \"Your webcam can see your heartbeat.\", Start camera and Use a video file buttons, and an empty heart rate panel reading \"waiting for signal\".",
+  "source": "https://quivercam.vercel.app"
+ },
+ {
+  "file": "shots/plainspoken-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 37840,
+  "alt": "Plainspoken home page with the headline \"Make AI text read like a person wrote it.\", mode and tone selectors, and two empty side by side panels labeled Original and Rewrite.",
+  "source": "https://plainspoken-app.vercel.app"
+ },
+ {
+  "file": "shots/plainspoken-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 12610,
+  "alt": "Plainspoken home page with the headline \"Make AI text read like a person wrote it.\", mode and tone selectors, and two empty side by side panels labeled Original and Rewrite.",
+  "source": "https://plainspoken-app.vercel.app"
+ },
+ {
+  "file": "shots/stet-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 70980,
+  "alt": "Stet home page with the headline \"Feedback that points at the sentence.\", a blue Start an essay button, and a sample review card showing an essay excerpt with underlined phrases and margin comments.",
+  "source": "https://stet-essay.vercel.app"
+ },
+ {
+  "file": "shots/stet-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 22488,
+  "alt": "Stet home page with the headline \"Feedback that points at the sentence.\", a blue Start an essay button, and a sample review card showing an essay excerpt with underlined phrases and margin comments.",
+  "source": "https://stet-essay.vercel.app"
+ },
+ {
+  "file": "shots/shrinkwatch-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 69408,
+  "alt": "Shrinkwatch home page on a cream background with a large red \"$148 a year\" figure and a before and after bar chart of an orange juice carton going from 52 fl oz to 46 fl oz.",
+  "source": "https://zaydmulani09.github.io/shrinkwatch/"
+ },
+ {
+  "file": "shots/shrinkwatch-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 24754,
+  "alt": "Shrinkwatch home page on a cream background with a large red \"$148 a year\" figure and a before and after bar chart of an orange juice carton going from 52 fl oz to 46 fl oz.",
+  "source": "https://zaydmulani09.github.io/shrinkwatch/"
+ },
+ {
+  "file": "shots/studio3svg-1600.webp",
+  "width": 1600,
+  "height": 1000,
+  "bytes": 22212,
+  "alt": "studio3svg page with its name, a short description, and a dashed box reading \"Drop .studio3 files here\" on a light background.",
+  "source": "https://zaydmulani09.github.io/studio3svg/"
+ },
+ {
+  "file": "shots/studio3svg-800.webp",
+  "width": 800,
+  "height": 500,
+  "bytes": 6870,
+  "alt": "studio3svg page with its name, a short description, and a dashed box reading \"Drop .studio3 files here\" on a light background.",
+  "source": "https://zaydmulani09.github.io/studio3svg/"
+ },
+ {
+  "file": "papers/could-software-be-conscious-1200.webp",
+  "width": 1200,
+  "height": 1553,
+  "bytes": 18796,
+  "alt": "Title page of a paper reading \"Could Software Be Conscious? A Theory-Comparative Review and a Falsifiable Ablation Program for a Minimal Artificial Agent\" by Zayd Mulani, black text centered on a white page.",
+  "source": "https://zenodo.org/api/records/23306276/files/Mulani_Artificial_Consciousness_Paper_reading.pdf/content"
+ },
+ {
+  "file": "papers/could-software-be-conscious-600.webp",
+  "width": 600,
+  "height": 777,
+  "bytes": 7464,
+  "alt": "Title page of a paper reading \"Could Software Be Conscious? A Theory-Comparative Review and a Falsifiable Ablation Program for a Minimal Artificial Agent\" by Zayd Mulani, black text centered on a white page.",
+  "source": "https://zenodo.org/api/records/23306276/files/Mulani_Artificial_Consciousness_Paper_reading.pdf/content"
+ },
+ {
+  "file": "papers/same-file-different-answers-1200.webp",
+  "width": 1200,
+  "height": 1553,
+  "bytes": 167978,
+  "alt": "First page of the paper \"Same File, Different Answers: Execution-Equivalent Settings Change Benchmark Results of Quantized LLMs on CPUs\" by Zayd Mulani, dated November 2026, with the abstract and the start of the introduction.",
+  "source": "https://zenodo.org/api/records/24055876/files/same-file-different-answers.pdf/content"
+ },
+ {
+  "file": "papers/same-file-different-answers-600.webp",
+  "width": 600,
+  "height": 777,
+  "bytes": 58098,
+  "alt": "First page of the paper \"Same File, Different Answers: Execution-Equivalent Settings Change Benchmark Results of Quantized LLMs on CPUs\" by Zayd Mulani, dated November 2026, with the abstract and the start of the introduction.",
+  "source": "https://zenodo.org/api/records/24055876/files/same-file-different-answers.pdf/content"
+ },
+ {
+  "file": "papers/anomaly-detection-small-datasets-1200.webp",
+  "width": 1200,
+  "height": 1553,
+  "bytes": 104250,
+  "alt": "First page of the paper \"Performance Tradeoffs Between Simple Statistical and Deep Learning Models in Small Datasets\" by Zayd Mulani, dated May 7, 2026, with an italic abstract, keywords and a working paper notice.",
+  "source": "https://zenodo.org/api/records/24095103/files/mulani-2026-anomaly-detection-small-datasets.pdf/content"
+ },
+ {
+  "file": "papers/anomaly-detection-small-datasets-600.webp",
+  "width": 600,
+  "height": 777,
+  "bytes": 35166,
+  "alt": "First page of the paper \"Performance Tradeoffs Between Simple Statistical and Deep Learning Models in Small Datasets\" by Zayd Mulani, dated May 7, 2026, with an italic abstract, keywords and a working paper notice.",
+  "source": "https://zenodo.org/api/records/24095103/files/mulani-2026-anomaly-detection-small-datasets.pdf/content"
+ },
+ {
+  "file": "p4c/p4c-1.webp",
+  "width": 1200,
+  "height": 900,
+  "bytes": 193138,
+  "alt": "Stacked cardboard boxes and about twenty shopping bags full of donated books on the grass beside a brick stoop and a hydrangea bush, with no people in the frame.",
+  "source": "C:\\Users\\jymul\\OneDrive\\Desktop\\p4c\\img\\events\\cranbury-bags-1200.webp"
+ },
+ {
+  "file": "p4c/p4c-1-800.webp",
+  "width": 800,
+  "height": 600,
+  "bytes": 104818,
+  "alt": "Stacked cardboard boxes and about twenty shopping bags full of donated books on the grass beside a brick stoop and a hydrangea bush, with no people in the frame.",
+  "source": "C:\\Users\\jymul\\OneDrive\\Desktop\\p4c\\img\\events\\cranbury-bags-1200.webp"
+ }
+]
