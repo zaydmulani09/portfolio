@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
   schedule:
-    # Every 6 hours. The page shows live stars, deploy state, and last-push
-    # dates, so it goes stale on its own even when nothing here changes.
     - cron: '17 */6 * * *'
   workflow_dispatch:
 
@@ -16,10 +14,6 @@ permissions:
 
 concurrency:
   group: pages
-  # A stuck Pages deploy holds this lock; with false, every later run queues
-  # behind it forever and gets auto-cancelled (wedged the site for 2 days on
-  # 2026-09-24). This is a static site, so interrupting a mid-flight deploy is
-  # harmless: the next run just rebuilds. true lets a new run clear a hung one.
   cancel-in-progress: true
 
 jobs:
@@ -34,14 +28,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check the explorer math
+        run: node build/check.mjs
 
       - name: Build
         env:
-          # Supplied by Actions automatically. Raises the GitHub API limit
-          # from 60 requests an hour to 5000.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Repo secret. If it is missing the build still succeeds and the
-          # live table says so on the page instead of going blank.
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
         run: node build/build.mjs
