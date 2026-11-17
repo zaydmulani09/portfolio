@@ -1,0 +1,435 @@
+/* ---------------------------------------------------------------------------
+   Premise: the work runs in the page. A live simulation carries the top, and
+   everything below it goes quiet so the demo is the only loud thing here.
+
+   That means: no accent colour, no rules-as-ornament, no labels, no status
+   chrome, no monospace worn as a costume. All the colour on this page comes
+   out of the embedded simulations, which are genuinely colourful, so the page
+   around them is neutral on purpose.
+--------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Bricolage';
+  src: url('/v/3/fonts/bricolage-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/v/3/fonts/public-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/v/3/fonts/public-sans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Commit Mono';
+  src: url('/v/3/fonts/commit-mono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0d0f0e;
+  --panel: #161a17;
+  --rule: #272c28;
+  --text: #e9ece6;
+  --muted: #959b90;
+
+  /* Contribution-graph segment colours. Commits track the text colour so they
+     stay the base tone (and flip to black in print); the rarer kinds get a
+     muted, desaturated hue each so the mix is legible without shouting. */
+  --c-commit: var(--text);
+  --c-pr: #86b06a;
+  --c-issue: #d29b63;
+  --c-review: #79a7cf;
+  --c-other: #5d6560;
+
+  --sans: 'Public Sans', system-ui, -apple-system, sans-serif;
+  --display: 'Bricolage', 'Public Sans', system-ui, sans-serif;
+  --mono: 'Commit Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  --col: 680px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  scrollbar-color: #3a4038 var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 17px/1.65 var(--sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+::selection { background: var(--text); color: var(--bg); }
+
+a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+a:hover { text-decoration-color: currentColor; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+.sr-only, .skip {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip:focus {
+  position: fixed; top: 10px; left: 10px;
+  width: auto; height: auto; clip-path: none;
+  z-index: 20;
+  padding: 10px 14px;
+  background: var(--text); color: var(--bg);
+  text-decoration: none;
+}
+
+.dim { color: var(--muted); }
+.warn { color: #e5a08f; }
+
+/* ---------------------------------------------------------------- top bar */
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 22px 28px 18px;
+}
+
+.who { margin: 0; font: 700 18px var(--display); }
+
+.bar nav { display: flex; flex-wrap: wrap; gap: 22px; font-size: 15px; color: var(--muted); }
+
+/* ------------------------------------------------------------------- hero */
+
+.hero {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 28px 76px;
+}
+
+/* The frame is sized by aspect ratio so nothing shifts when it mounts. */
+.stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: 74vh;
+  background: #070908;
+  border: 1px solid var(--rule);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.stage iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.stage-note {
+  margin: 0;
+  padding: 28px;
+  max-width: 46ch;
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.stage-inline { aspect-ratio: 16 / 10; max-height: 520px; margin-top: 20px; }
+.stage-down { aspect-ratio: auto; min-height: 140px; }
+
+.stage-caption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 20px 48px;
+  margin-top: 20px;
+}
+.stage-caption p { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16px; }
+
+/* ------------------------------------------------------------------ runs */
+
+.run {
+  font: 600 16px var(--sans);
+  color: var(--bg);
+  background: var(--text);
+  border: 0;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+.run:hover { background: #fff; }
+.run-big { font-size: 17px; padding: 13px 26px; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin: 16px 0 0;
+  font-size: 16px;
+}
+.stage-caption .actions { margin: 0; justify-content: flex-end; }
+
+/* --------------------------------------------------------------- content */
+
+main { max-width: var(--col); margin: 0 auto; padding: 0 28px; }
+
+.intro p {
+  margin: 0 0 22px;
+  font-size: 19px;
+  line-height: 1.6;
+}
+.intro { padding: 28px 0 40px; border-bottom: 1px solid var(--rule); }
+
+.block { padding: 56px 0; }
+.block + .block { border-top: 1px solid var(--rule); }
+
+h2,
+.block h1 {
+  margin: 0 0 12px;
+  font: 700 34px/1.1 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.lead { margin: 0 0 36px; color: var(--muted); font-size: 16.5px; max-width: 60ch; }
+
+.work { padding: 26px 0; }
+.work + .work { border-top: 1px solid var(--rule); }
+
+h3,
+.work h2 { margin: 0 0 10px; font: 700 20px var(--display); letter-spacing: 0; }
+
+.work p { margin: 0; }
+/* `.work p` outranks `.actions`, so the actions row needs the same weight to
+   keep its spacing. The button is taller than a line of text, so it wants
+   more room above it than a plain link row would. */
+.work .actions { margin-top: 22px; }
+
+.facts, .commit {
+  margin-top: 12px !important;
+  color: var(--muted);
+  font-size: 15.5px;
+}
+.commit { font-family: var(--mono); font-size: 14px; line-height: 1.5; }
+.commit a { font-family: var(--mono); }
+
+.loose { margin: 0; padding: 0; list-style: none; }
+.loose li {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 16.5px;
+  line-height: 1.5;
+}
+.loose li:first-child { padding-top: 0; }
+.loose li:last-child { border-bottom: 0; }
+
+.foot {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: 32px 28px 64px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 15.5px;
+}
+.foot p { margin: 0; }
+
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width: 720px) {
+  body { font-size: 16.5px; }
+  .bar, .hero { padding-left: 20px; padding-right: 20px; }
+  .hero { padding-bottom: 48px; }
+  main, .foot { padding-left: 20px; padding-right: 20px; }
+
+  .stage { aspect-ratio: 4 / 3; max-height: none; }
+  .stage-idle { aspect-ratio: 16 / 10; }
+  .stage-caption { grid-template-columns: 1fr; gap: 16px; }
+  .stage-caption .actions { justify-content: flex-start; }
+
+  .block { padding: 44px 0; }
+  h2 { font-size: 21px; }
+  .intro p { font-size: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+@media print {
+  :root { --bg: #fff; --text: #000; --muted: #444; --rule: #ccc; }
+  body { color: #000; background: #fff; }
+  .bar, .stage, .run, .skip { display: none; }
+  a { text-decoration: none; }
+  a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 9pt; color: #444; }
+}
+
+
+/* ------------------------------------------------------------------ pulse */
+
+/* A month of pushes. The empty days are load-bearing, so they get a visible
+   stub rather than nothing at all. */
+.pulse {
+  padding: 40px 0 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 64px;
+  margin-bottom: 16px;
+}
+
+.tick {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--text);
+}
+.tick-none { background: var(--rule); }
+
+/* Graph bars are a stack of coloured segments instead of one solid block. The
+   tick is the day's height; each segment grows in proportion to its count. */
+.bars-graph .tick {
+  display: flex;
+  flex-direction: column-reverse;
+  background: none;
+  border-radius: 1px;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+.bars-graph .tick.tick-none {
+  background: var(--rule);
+}
+.seg { width: 100%; flex: 0 0 auto; min-height: 1px; }
+.seg-commit { background: var(--c-commit); }
+.seg-pr { background: var(--c-pr); }
+.seg-issue { background: var(--c-issue); }
+.seg-review { background: var(--c-review); }
+.seg-other { background: var(--c-other); }
+
+/* Pick a bar up on hover or keyboard focus: a small bounce, then it settles
+   raised and brightened while the tooltip is open. Reduced-motion users get
+   the raise and brightness without the bounce (animations are killed below). */
+.bars-graph .tick:hover,
+.bars-graph .tick:focus-visible {
+  transform: translateY(-6px);
+  filter: brightness(1.18);
+  outline: none;
+  animation: tick-bounce 0.42s ease;
+}
+@keyframes tick-bounce {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-10px); }
+  70% { transform: translateY(-3px); }
+  100% { transform: translateY(-6px); }
+}
+
+/* Colour key: what each band means, shown under the bars. */
+.pulse-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.pulse-legend .key { display: inline-flex; align-items: center; gap: 7px; }
+.pulse-legend .sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.sw-commit { background: var(--c-commit); }
+.sw-pr { background: var(--c-pr); }
+.sw-issue { background: var(--c-issue); }
+.sw-review { background: var(--c-review); }
+.sw-other { background: var(--c-other); }
+
+/* JS tooltip: a small panel above the hovered bar naming the day and its mix,
+   each line dotted in the colour it stands for. Hidden until app.js opens it,
+   and the page reads fine without it (the tick keeps its title attribute). */
+.pulse-tip {
+  position: fixed;
+  z-index: 20;
+  min-width: 132px;
+  padding: 9px 11px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.pulse-tip.show { opacity: 1; transform: translateY(0); }
+.pulse-tip .tip-day { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.pulse-tip .tip-row { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pulse-tip .tip-dot { width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+.pulse-tip .tip-none { color: var(--muted); }
+
+.pulse-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: -10px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.pulse-read { margin: 0; font-size: 16px; color: var(--muted); }
+
+.pulse-last {
+  margin: 10px 0 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.pulse-last q { quotes: '"' '"'; }
+
+@media (max-width: 720px) {
+  .bars { height: 48px; gap: 2px; }
+  h2, .block h1 { font-size: 26px; }
+  .pulse { padding-top: 30px; }
+}
+
+/* ------------------------------------------------------------------ craft */
+
+/* Dated log of small things. Three columns on desktop so the dates line up
+   into a readable spine; stacked on mobile where they would not. */
+.craft { margin: 0; padding: 0; list-style: none; }
+
+.craft li {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr) auto;
+  gap: 8px 20px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.craft li:first-child { padding-top: 0; }
+
+.craft-when { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.craft-what strong { font-weight: 600; }
+.craft-go { font-size: 14.5px; white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .craft li { grid-template-columns: 1fr auto; gap: 4px 16px; }
+  .craft-when { grid-column: 1 / -1; order: -1; }
+}
