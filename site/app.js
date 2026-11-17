@@ -1,142 +1,188 @@
-// Two jobs: turn absolute dates into relative ones, and start the demos.
-// The page is complete and readable with this file blocked.
 (() => {
-  /* dates ---------------------------------------------------------------- */
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  const steps = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]];
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const root = document.documentElement;
 
-  for (const el of document.querySelectorAll('time[data-rel]')) {
-    const then = new Date(el.dateTime);
-    if (Number.isNaN(+then)) continue;
-    const secs = (then - Date.now()) / 1000;
-    const abs = Math.abs(secs);
-    let text = 'just now';
-    for (const [unit, size] of steps) {
-      if (abs >= size) { text = rtf.format(Math.round(secs / size), unit); break; }
-    }
-    el.title = then.toISOString();
-    el.textContent = text;
+  const reveal = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add('is-in');
+        reveal.unobserve(e.target);
+      }
+    },
+    { rootMargin: '0px 0px -10% 0px', threshold: 0.08 },
+  );
+  $$('[data-reveal], .bars, .shutter').forEach((el) => reveal.observe(el));
+  $$('.bars .bar').forEach((b, i) => b.style.setProperty('--n', i));
+  setTimeout(() => $$('[data-reveal]').forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) el.classList.add('is-in');
+  }), 1500);
+
+  const top = $('[data-top]');
+  const fields = $$('[data-field]');
+  const FIELDS = ['f-moss', 'f-inverse', 'f-black', 'f-surface'];
+  if (top && fields.length) {
+    const under = new Set();
+    let io;
+    const watch = () => {
+      io?.disconnect();
+      under.clear();
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) e.isIntersecting ? under.add(e.target) : under.delete(e.target);
+          const field = under.size ? [...under].at(-1).dataset.field : '';
+          for (const f of FIELDS) top.classList.toggle(f, f === field);
+        },
+        { rootMargin: `-60px 0px -${Math.max(innerHeight - 61, 0)}px 0px` },
+      );
+      fields.forEach((f) => io.observe(f));
+    };
+    watch();
+    addEventListener('resize', watch, { passive: true });
   }
 
-  /* demos ---------------------------------------------------------------- */
-  // Each demo is the real deployment in an iframe. Nothing third-party loads
-  // until a frame is actually mounted, so a visitor who never presses run
-  // makes no request off this origin.
-  // Whether a frame actually painted cannot be read from the page: a refused
-  // load and a healthy cross-origin one both throw SecurityError. So ask the
-  // network instead. A no-cors fetch resolves opaquely when the deployment
-  // answers and rejects when it is gone, which is the failure that will
-  // actually happen here over time.
-  async function reachable(src) {
-    try {
-      await fetch(src, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(5000) });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function down(host, src) {
-    host.classList.add('stage-down');
-    host.classList.remove('stage-idle');
-    host.innerHTML = `<p class="stage-note">This one is not answering right now. <a href="${src}">Try it on its own page</a>, or read the source below.</p>`;
-  }
-
-  async function mount(host, src, title) {
-    if (host.querySelector('iframe') || host.dataset.mounting === 'yes') return;
-    host.dataset.mounting = 'yes';
-
-    if (!(await reachable(src))) {
-      down(host, src);
-      return;
-    }
-
-    const frame = document.createElement('iframe');
-    frame.src = src;
-    frame.title = `${title}, running live`;
-    frame.loading = 'lazy';
-    frame.allow = 'fullscreen';
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-
-    host.textContent = '';
-    host.classList.remove('stage-idle');
-    host.appendChild(frame);
-    frame.addEventListener('load', () => host.classList.add('is-live'), { once: true });
-  }
-
-  for (const btn of document.querySelectorAll('button.run')) {
-    btn.addEventListener('click', () => {
-      const host = document.createElement('div');
-      host.className = 'stage stage-inline';
-      btn.closest('.work').appendChild(host);
-      btn.remove();
-      mount(host, btn.dataset.src, btn.dataset.title);
+  const themeBtn = $('[data-theme-toggle]');
+  if (themeBtn) {
+    const current = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const label = () => themeBtn.setAttribute('aria-label', `Switch to ${current() === 'dark' ? 'light' : 'dark'} mode`);
+    label();
+    themeBtn.addEventListener('click', () => {
+      const next = current() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {}
+      label();
     });
   }
 
-  /* pulse tooltip -------------------------------------------------------- */
-  // Enhances the contribution bars with a small panel naming the day and its
-  // mix, each line dotted in its colour. Every bar already carries the same
-  // text in a title attribute, so this is pure polish and the page is complete
-  // without it. Falls back to nothing if there are no graph bars.
-  const graphBars = document.querySelector('.bars-graph');
-  if (graphBars) {
-    const KIND = {
-      commit: ['Commits', 'var(--c-commit)', 'commit'],
-      pr: ['Pull requests', 'var(--c-pr)', 'pull request'],
-      issue: ['Issues', 'var(--c-issue)', 'issue'],
-      review: ['Reviews', 'var(--c-review)', 'review'],
-      other: ['Other', 'var(--c-other)', 'other'],
-    };
-    const tip = document.createElement('div');
-    tip.className = 'pulse-tip';
-    tip.setAttribute('role', 'presentation');
-    document.body.appendChild(tip);
-
-    const fill = (tick) => {
-      const day = tick.dataset.day || '';
-      const parts = (tick.dataset.parts || '')
-        .split(',')
-        .map((s) => s.split(':'))
-        .filter(([k, v]) => KIND[k] && +v > 0);
-      let rows = `<p class="tip-day">${day}</p>`;
-      if (!parts.length) {
-        rows += '<p class="tip-none">nothing this day</p>';
-      } else {
-        for (const [k, v] of parts) {
-          const [, colour, one] = KIND[k];
-          const n = +v;
-          rows += `<p class="tip-row"><span class="tip-dot" style="background:${colour}"></span>${n.toLocaleString('en-US')} ${n === 1 ? one : one + 's'}</p>`;
-        }
+  for (const btn of $$('[data-run]')) {
+    btn.addEventListener('click', async () => {
+      const stage = btn.closest('[data-stage]');
+      const img = $('img', stage);
+      const src = btn.dataset.run;
+      btn.disabled = true;
+      btn.textContent = 'Loading';
+      try {
+        await fetch(src, { mode: 'no-cors', cache: 'no-store' });
+        const frame = document.createElement('iframe');
+        frame.src = src;
+        frame.title = `${btn.dataset.title}, running live`;
+        frame.allow = 'fullscreen; gpu';
+        frame.loading = 'eager';
+        if (img) img.replaceWith(frame);
+        else stage.prepend(frame);
+        btn.remove();
+        frame.focus();
+      } catch {
+        btn.textContent = 'It did not answer. Try the tab link';
       }
-      tip.innerHTML = rows;
-    };
-
-    const place = (tick) => {
-      const r = tick.getBoundingClientRect();
-      const t = tip.getBoundingClientRect();
-      let left = r.left + r.width / 2 - t.width / 2;
-      left = Math.max(10, Math.min(left, window.innerWidth - t.width - 10));
-      let top = r.top - t.height - 10;
-      if (top < 10) top = r.bottom + 10; // flip below if there is no room above
-      tip.style.left = `${left}px`;
-      tip.style.top = `${top}px`;
-    };
-
-    const show = (e) => {
-      const tick = e.currentTarget;
-      fill(tick);
-      place(tick);
-      tip.classList.add('show');
-    };
-    const hide = () => tip.classList.remove('show');
-
-    for (const tick of graphBars.querySelectorAll('.tick')) {
-      tick.addEventListener('mouseenter', show);
-      tick.addEventListener('focus', show);
-      tick.addEventListener('mouseleave', hide);
-      tick.addEventListener('blur', hide);
-    }
-    window.addEventListener('scroll', hide, { passive: true });
+    });
   }
+
+  const copy = async (text, btn) => {
+    const was = btn.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'Copied';
+    } catch {
+      btn.textContent = 'Copy failed';
+    }
+    setTimeout(() => (btn.textContent = was), 1600);
+  };
+  $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy, b)));
+  $$('[data-copy-from]').forEach((b) => b.addEventListener('click', () => copy(document.getElementById(b.dataset.copyFrom).textContent, b)));
+
+  const dialog = $('[data-palette]');
+  if (!dialog) return;
+  const input = $('input', dialog);
+  const list = $('ul', dialog);
+  let index = null;
+  let hits = [];
+  let sel = 0;
+
+  const draw = () => {
+    const q = input.value.trim().toLowerCase();
+    const words = q.split(/\s+/).filter(Boolean);
+    hits = (index || [])
+      .map((item) => {
+        const hay = `${item.t} ${item.d || ''} ${item.k}`.toLowerCase();
+        if (!words.every((w) => hay.includes(w))) return null;
+        const score = (item.t.toLowerCase().startsWith(q) ? 0 : 1) + (item.k === 'Page' ? 0 : 0.5);
+        return { item, score };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, q ? 12 : 7)
+      .map((h) => h.item);
+    sel = Math.min(sel, Math.max(hits.length - 1, 0));
+    list.innerHTML = '';
+    hits.forEach((h, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(i === sel));
+      const a = document.createElement('a');
+      a.href = h.u;
+      a.textContent = h.t;
+      const k = document.createElement('span');
+      k.textContent = h.k;
+      a.append(k);
+      li.append(a);
+      list.append(li);
+    });
+    if (!hits.length) {
+      const li = document.createElement('li');
+      li.textContent = 'Nothing matches.';
+      li.style.padding = '11px 20px';
+      list.append(li);
+    }
+  };
+
+  const open = async () => {
+    if (!dialog.open) dialog.showModal();
+    input.value = '';
+    sel = 0;
+    if (!index) {
+      try {
+        index = await (await fetch('/search.json')).json();
+      } catch {
+        index = [];
+      }
+    }
+    draw();
+    input.focus();
+  };
+
+  $$('[data-palette-open]').forEach((b) => b.addEventListener('click', open));
+  addEventListener('keydown', (e) => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+    if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) {
+      e.preventDefault();
+      open();
+    }
+  });
+  input.addEventListener('input', () => {
+    sel = 0;
+    draw();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + hits.length) % Math.max(hits.length, 1);
+      draw();
+      $('[aria-selected="true"]', list)?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (hits[sel]) {
+        dialog.close();
+        location.href = hits[sel].u;
+      }
+    }
+  });
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+    if (e.target.closest('a')) dialog.close();
+  });
 })();
