@@ -1,0 +1,263 @@
+[
+  {
+    "repo": "learned-confidence-shift",
+    "label": "Milestone 3",
+    "question": "The study asked whether a learned confidence estimator trained on Gaussian noise, rotation and blur keeps predicting classifier errors on unseen shifts (contrast, occlusion) and on semantic OOD data (Fashion-MNIST).",
+    "predictions": [],
+    "sourceNotes": "The repo states a research question and a finding, with no identified hypotheses and no supported or refuted labels, so predictions is empty. The finding, from README (Finding) and results/MILESTONE3_FINAL_REPORT.md (13. Generalization Conclusion): learned confidence did not outperform simple baselines on unseen shifts, and Fashion-MNIST OOD AUROC was 0.966 for the learned model against 0.985 for entropy and 0.980 for MSP."
+  },
+  {
+    "repo": "generalizable-uncertainty-shift",
+    "label": "Milestone 4",
+    "question": "The study asked whether a learned uncertainty estimator trained with pairwise ranking supervision transfers its error prediction to shift families that were entirely held out of its training.",
+    "predictions": [
+      {
+        "id": "A",
+        "claim": "Learned uncertainty generalizes to unseen shift families.",
+        "outcome": "refuted",
+        "evidence": "No M4 variant reduced the seen to unseen generalization gap relative to MSP or entropy, and the full-feature models had a larger gap than the simple baselines."
+      },
+      {
+        "id": "B",
+        "claim": "Learned uncertainty does not generalize.",
+        "outcome": "mixed",
+        "evidence": "The report says partially: full-feature models go from .97 seen-shift AUROC to a .74 unseen mean, while the uncertainty-only variants collapse less (gap .145, same order as MSP)."
+      },
+      {
+        "id": "C",
+        "claim": "Simple uncertainty signals remain sufficient.",
+        "outcome": "supported",
+        "evidence": "MSP and entropy matched or outperformed every M4 variant, and the primary M4 model lost to MSP on unseen shifts in 3 of 3 seeds (mean gap -0.028, not significant at n=3)."
+      }
+    ],
+    "sourceNotes": "All three outcomes: results/MILESTONE4_FINAL_REPORT.md, 22. Scientific Interpretation, which labels them 'Not (A)', 'Partially (B)' and 'Best supported: (C)'. These are the three candidate outcomes laid out in the project spec, not directional predictions with thresholds; the README states only a research question. 'Partially' is mapped to mixed. The report also lists research questions RQ1 to RQ6 in section 23 without supported or refuted labels, so they are not included."
+  },
+  {
+    "repo": "m5-shift-invariant-confidence",
+    "label": "Milestone 5",
+    "question": "The study asked whether training a confidence estimator across several independently trained classifiers, with an adversarial objective that hides shift-family identity, closes the generalization gap left by Milestones 3 and 4.",
+    "predictions": [
+      {
+        "id": "central hypothesis",
+        "claim": "Training across multiple classifiers while adversarially suppressing shift-family identity produces a more transferable notion of classifier reliability.",
+        "outcome": "refuted",
+        "evidence": "The lambda_shift search selected 0.0, which turns the adversarial term off, and a confidence model tested on a classifier it never saw fell to 0.41 to 0.53 error AUROC even on clean data."
+      }
+    ],
+    "sourceNotes": "Hypothesis: results/MILESTONE5_FINAL_REPORT.md, 2. Hypotheses (one unnamed 'central hypothesis', so that phrase is used as the id). Outcome: README ('M5 finding: no.') and the report's Finding, 16. Ablations / Hyperparameter Selection, 14. Cross-Classifier (LOCO) Results and 24. Conclusion ('Outcome C'). The repo says 'no' and 'did not' and does not use the word refuted; it is mapped to refuted."
+  },
+  {
+    "repo": "m6-transferable-confidence",
+    "label": "Milestone 6",
+    "question": "The study asked whether a confidence estimator built only from classifier-agnostic evidence (prediction behavior, ensemble disagreement, geometric novelty) fixes the cross-classifier transfer failure found in Milestone 5.",
+    "predictions": [
+      {
+        "id": "H0",
+        "claim": "M6 does not outperform simple uncertainty baselines.",
+        "outcome": "mixed",
+        "evidence": "The report answers 'Does M6 beat MSP' with mixed: yes on contrast and OOD (KMNIST OOD AUROC .987 against .948 for MSP), no at severe occlusion."
+      },
+      {
+        "id": "H1",
+        "claim": "M6 provides a failure-prediction signal that transfers across classifiers and to unseen shifts.",
+        "outcome": "mixed",
+        "evidence": "Transfer across classifiers holds, with a leave-one-classifier-out gap of ±0.001 to 0.004, but unseen-shift error detection is mixed against MSP and entropy."
+      }
+    ],
+    "sourceNotes": "Hypotheses: results/MILESTONE6_FINAL_REPORT.md, 2. Hypotheses. Outcomes: the report does not attach a supported or refuted label to H0 or H1 by id. It calls the unseen-shift result 'mixed' in 23. Scientific Interpretation and in 24. Conclusion items 4 and 5, and the README repeats 'mixed', so both are recorded as mixed. LOCO gap: report section 14 and README. OOD numbers: report section 13."
+  },
+  {
+    "repo": "m7-correctness-prediction",
+    "label": "Milestone 7",
+    "question": "The study asked whether a classifier's observable behavior under controlled, label-free interventions carries correctness information beyond a single-pass confidence score.",
+    "predictions": [
+      {
+        "id": "H_A",
+        "claim": "Probability-first training with a post-hoc calibration map gives a correctness probability that is better calibrated than raw, temperature-scaled or Platt-scaled MSP under shift, and this carries across classifiers.",
+        "outcome": "supported",
+        "evidence": "On the locked unseen shifts m7_core improves Brier, NLL and ECE over raw MSP, temp-MSP and Platt-MSP with every 95% bootstrap CI excluding 0, and the leave-one-classifier-out gap is at most 0.002."
+      },
+      {
+        "id": "H_B",
+        "claim": "Perturbation-response-curve features add error-ranking information beyond a single forward pass.",
+        "outcome": "refuted",
+        "evidence": "The response curves add nothing to error ranking: their incremental value is -0.005 AUROC against MSP."
+      }
+    ],
+    "sourceNotes": "Both hypotheses and outcomes: README, 'M7 question' and Result ('H_A supported. H_B refuted.'). The same labels appear in results/MILESTONE7_FINAL_REPORT.md, 3. Pilot (falsification gate), where the pilot table reports m7_core minus Platt-MSP Brier of -0.037 with 95% CI [-0.056, -0.020] and response_curve minus MSP error-AUROC of -0.009 with 95% CI [-0.014, -0.004]."
+  },
+  {
+    "repo": "m8-stability-correctness",
+    "label": "Milestone 8",
+    "question": "The study asked whether a well-sampled measurement of local decision-boundary stability, or a directed input-space margin, carries per-example correctness information beyond MSP under distribution shift.",
+    "predictions": [
+      {
+        "id": "H8",
+        "claim": "Local decision-boundary stability, sampled with 32 Monte-Carlo perturbations per radius, adds error-ranking information beyond MSP and transfers across classifiers.",
+        "outcome": "refuted",
+        "evidence": "Adding stability to MSP changes error AUROC by -0.036 (95% CI [-0.058, -0.019]) and is worse in 9/9 leave-one-shift-family-out cells."
+      },
+      {
+        "id": "H8D",
+        "claim": "A directed input-space margin estimate adds error-ranking information beyond MSP and beyond the undirected stability features.",
+        "outcome": "refuted",
+        "evidence": "Adding the directed margin changes error AUROC by -0.011 (95% CI [-0.019, -0.004]), and its matched-MSP decile-macro error AUROC is 0.35, below 0.5."
+      }
+    ],
+    "sourceNotes": "Outcomes: README, 'Result: H8 and H8D REFUTED at the pre-registered pilot gate' (the README writes the ids with a subscript 8 and superscript D; the repo description writes H8/H8D). Hypothesis wording: results/M8_DESIGN.md, 'Primary hypothesis H8 (frozen)' and 'Secondary hypothesis H8D (frozen)'. Both were refuted at the pilot gate; the README states the frozen locked benchmark was not run."
+  },
+  {
+    "repo": "uno-model",
+    "label": "Ternary on UNO Q",
+    "question": "The study asked whether a ternary LLM quantization can beat 4-bit on an Arduino UNO Q, a board with four Cortex-A53 cores and no dot-product instructions.",
+    "predictions": [
+      {
+        "id": "G1",
+        "claim": "Ternary TQ2_0 generates tokens at least 20% faster than Q4_0 of the same model (Qwen3-0.6B) on the board.",
+        "outcome": "supported",
+        "evidence": "TQ2_0 ran at 14.02 tok/s against 9.76 tok/s for Q4_0, +43.7%, though the report adds that post-training ternary Qwen3-0.6B is at chance on MMLU and 0% on GSM8K and TriviaQA."
+      },
+      {
+        "id": "G2",
+        "claim": "Some Bonsai candidate reaches at least 1.25x the baseline speed (4.41 tok/s) with every eval no more than 3 points below baseline.",
+        "outcome": "refuted",
+        "evidence": "TQ2_0 is 2.05x faster but MMLU is 50.5, missing 51.0 by one question, and PQ2_0 keeps quality but is only 1.12x."
+      },
+      {
+        "id": "G3",
+        "claim": "Restricting the output head to the 32768 most frequent tokens gives at least 1.10x speed with every eval no more than 3 points lower.",
+        "outcome": "refuted",
+        "evidence": "Speed passes at 1.16x, but GSM8K drops 68 to 23 and TriviaQA drops 22 to 0 because the pre-registered token set has no newline token."
+      },
+      {
+        "id": "T (stage 1)",
+        "claim": "The best final configuration reaches at least 6.24 tok/s with MMLU of at least 50.",
+        "outcome": "refuted",
+        "evidence": "The best final configuration is PQ2_0 without restriction at 3.94 tok/s."
+      },
+      {
+        "id": "G4",
+        "claim": "The new lossless type TQ2_0_G128 reaches at least 6.24 tok/s with every eval no more than 2 points below PQ2_0.",
+        "outcome": "supported",
+        "evidence": "6.68 tok/s (1.70x PQ2_0) with MMLU -0.1, GSM8K ±0.0 and TriviaQA -0.4, and 197/197 tensors bit-identical to PQ2_0."
+      },
+      {
+        "id": "G5",
+        "claim": "Vocabulary restriction v2 gives at least 1.10x speed with every eval no more than 3 points below the unrestricted model.",
+        "outcome": "refuted",
+        "evidence": "Speed passes at 1.135x (6.68 to 7.58 tok/s) and MMLU and GSM8K hold at -0.3 each, but TriviaQA drops 4.2 points."
+      },
+      {
+        "id": "T (stage 1b)",
+        "claim": "The best configuration reaches at least 6.24 tok/s with MMLU of at least 51 on the 1000-question set.",
+        "outcome": "refuted",
+        "evidence": "TQ2_0_G128 reaches 6.68 tok/s but its MMLU is 46.8."
+      },
+      {
+        "id": "R",
+        "claim": "TQ2_0_G128 is at least as fast as same-day Gemma 3 1B Q4_0 and beats it on MMLU and GSM8K with non-overlapping 95% intervals.",
+        "outcome": "supported",
+        "evidence": "6.66 against 6.22 tok/s, MMLU 46.8 [43.7, 49.9] against 38.4 [35.4, 41.5], and GSM8K 62.7 [57.1, 67.9] against 12.0 [8.8, 16.2]."
+      },
+      {
+        "id": "G6",
+        "claim": "A trained token-indexed memory on frozen Bonsai raises TriviaQA by at least 3.0 points and MMLU by at least 2.0 points while GSM8K falls by no more than 2.0.",
+        "outcome": "not tested",
+        "evidence": "PREREG5.md pre-registers the gate, and the repo contains no stage 2a report or result for it."
+      }
+    ],
+    "sourceNotes": "PASS and FAIL in the reports are mapped to supported and refuted. G1: REPORT.md, first line and Rule G1; rule text in PREREG.md. G2, G3, T (stage 1): REPORT2.md, gate table; rule text in PREREG2.md, Gates. G4, G5, T (stage 1b): REPORT3.md, gate table and Lossless conversion; rule text in PREREG3.md, Gates. R: REPORT4.md, Rule R table; rule text in PREREG4.md, Rule R. G6: PREREG5.md, Gate G6; there is no REPORT5.md. The repo uses the id T in two stages with different MMLU bars, so the stage is added in parentheses. PREREG4.md states that R is a new release rule and does not re-score T, which stays recorded as FAIL."
+  },
+  {
+    "repo": "same-file-different-answers",
+    "label": "Same File, Different Answers",
+    "question": "The study asked how much benchmark answers change when the llama.cpp release, the GGUF file, the prompts and greedy decoding stay fixed and only performance settings change.",
+    "predictions": [
+      {
+        "id": "P1",
+        "claim": "Thread counts of 4, 8 and 12 give bitwise-identical logits for all six models.",
+        "outcome": "supported",
+        "evidence": "Identical for 6/6 models."
+      },
+      {
+        "id": "P2",
+        "claim": "The haswell backend tier gives the same logits as alderlake for all models.",
+        "outcome": "supported",
+        "evidence": "Identical for 6/6 models."
+      },
+      {
+        "id": "P3",
+        "claim": "The ivybridge tier, which has no FMA and no repacking, differs from alderlake for all models.",
+        "outcome": "supported",
+        "evidence": "Differs for 6/6 models."
+      },
+      {
+        "id": "P4",
+        "claim": "The sandybridge tier differs from ivybridge, and sse42 differs from every AVX tier.",
+        "outcome": "not tested",
+        "evidence": "Both differ from the reference, but the tiers were never compared with each other."
+      },
+      {
+        "id": "P5 (micro-batch 1)",
+        "claim": "Micro-batch 1 differs from micro-batch 512 for all models.",
+        "outcome": "supported",
+        "evidence": "Differs for 6/6 models."
+      },
+      {
+        "id": "P5 (micro-batch 7)",
+        "claim": "Micro-batch 7 differs from micro-batch 512 for all models.",
+        "outcome": "refuted",
+        "evidence": "Falsified for 5/6: it differs only for Q4_K_M and is identical for Q4_0 (3 models), Q8_0 and F16."
+      },
+      {
+        "id": "P6",
+        "claim": "Turning repacking off changes the logits for Q4_0 and Q4_K_M and leaves Q8_0 and F16 identical.",
+        "outcome": "supported",
+        "evidence": "Differs for all four Q4 files and is identical for Q8_0 and F16."
+      },
+      {
+        "id": "P7",
+        "claim": "Turning flash attention on changes the logits for all models.",
+        "outcome": "supported",
+        "evidence": "Differs for 6/6 models."
+      },
+      {
+        "id": "P8",
+        "claim": "A rerun of the reference configuration is 100% identical to the first run.",
+        "outcome": "supported",
+        "evidence": "980/980 items bitwise equal."
+      },
+      {
+        "id": "P9",
+        "claim": "Turning the prompt cache on makes some items differ from the reference.",
+        "outcome": "supported",
+        "evidence": "68% of items not bitwise equal (Q4_K_M)."
+      },
+      {
+        "id": "P10",
+        "claim": "The same parallel-server command run twice gives different outputs.",
+        "outcome": "supported",
+        "evidence": "Supported for Q4_K_M, the only model run twice: the two runs agreed bitwise on 45.4% of items (445 of 980)."
+      },
+      {
+        "id": "P11",
+        "claim": "Divergence produces benchmark flips, and the flips concentrate on low-margin MMLU items.",
+        "outcome": "supported",
+        "evidence": "MMLU items that changed had a median reference margin of 0.30 nats against 1.65 for all items."
+      },
+      {
+        "id": "A1",
+        "claim": "Under the ivybridge change, mean KL divergence is at least 10x smaller for F32 weights with an F32 KV cache than for Q8_0, and orders as F32 below F16 below Q8_0.",
+        "outcome": "supported",
+        "evidence": "With F32 weights and an F32 KV cache the divergence stays at the measurement floor (below 1e-6), and switching to Q8_0 weights raises the mean KLD to 1.3e-3."
+      },
+      {
+        "id": "A2",
+        "claim": "Changing threads from 4 to 8 leaves the divergence at exactly zero for every format.",
+        "outcome": "supported",
+        "evidence": "Exactly zero in all six formats."
+      }
+    ],
+    "sourceNotes": "Prediction text: PREDICTIONS.md (P1 to P11, and Addendum A for A1 and A2). Outcomes and evidence: paper/tab_pred.tex, the table 'Pre-registered predictions and outcomes', whose labels are supported, falsified (mapped to refuted) and not tested. The table splits P5 into a micro-batch 1 row and a micro-batch 7 row, and that split is kept here; P5 made no confident prediction for micro-batch 8 and 64, so those are left out. P10 was predicted for every model and tested on Q4_K_M only; the table still marks it supported. P10 and P11 numbers: paper/sec_results.tex. A1 numbers: paper/sec_mechanism.tex. The paper states that of the thirteen predictions the runs tested, twelve held."
+  }
+]
