@@ -1,0 +1,278 @@
+[
+  {
+    "repo": "mnemo",
+    "kind": "tool",
+    "one": "Local memory sidecar for LLM apps: entity extraction, a SQLite knowledge graph, and scored retrieval.",
+    "body": [
+      "mnemo is a local sidecar service that gives an LLM pipeline memory between sessions. I built it for developers who run their own pipelines and want structured memory they control, with no cloud dependency. You post conversation turns or documents to it, and later ask it for context to inject into the next prompt. It works with Ollama, OpenAI, Anthropic, or any OpenAI-compatible API.",
+      "On ingest, the configured LLM extracts entities and the relationships between them. Entities are deduplicated by name and type, aliases are merged, and everything is written to SQLite while an in-memory petgraph graph is updated. Retrieval runs six stages: full-text chunk search, entity name search, breadth-first graph expansion, a relation filter, scoring and ranking, and assembly of a context_prompt string. Graph-expanded results score at 0.5x so direct matches rank first.",
+      "The workspace has four Rust crates: the core library, an Axum REST API, a CLI that talks to that API, and a benchmark binary with 12 suites. The README lists 122 Rust tests and 21 Python SDK tests."
+    ],
+    "facts": [
+      ["Rust tests", "122"],
+      ["Python SDK tests", "21"],
+      ["Benchmark suites", "12"],
+      ["Retrieval pipeline", "6 stages"],
+      ["Graph-expanded result score", "0.5x"]
+    ],
+    "limits": "It is aimed at developers building custom LLM pipelines; the README says that if a managed agent harness already handles memory for you, you do not need it.",
+    "install": "cargo install --path crates/mnemo-api",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Test and benchmark counts: README.md, Testing ('Current test counts') and Architecture table; CONTEXT.md repeats 122 Rust and 21 Python tests. 6 stages and 0.5x: README.md, How it works and Why mnemo. Limits: README.md, Why mnemo ('mnemo is not for everyone'). Install: README.md, Quickstart Path B, run from a clone. Left out on purpose: the README Performance table (labeled 'Benchmarked on Apple M2', debug build) and the 'under 50ms' line; CONTEXT.md calls them 'M2 reference numbers' and the code notes Windows path handling, so I could not confirm they were measured. links.crate is null because the README badge points at mnemo-core on crates.io, and that crate name belongs to a different project (sattyamjjain/mnemo). The README also says 'pip install mnemo-sdk', but mnemo-sdk on PyPI is a different project (DharmaDhillon/mnemo), so that command is not used."
+  },
+  {
+    "repo": "vecdb",
+    "kind": "library",
+    "one": "Embeddable vector database in Rust with HNSW, BM25, hybrid, and filtered search, run in-process.",
+    "body": [
+      "vecdb is a vector database you link into a Rust program the way you would link SQLite. I wanted vector search with no server, daemon, or container: add the crate, point it at a directory, and query in-process. It stores float32 vectors with JSON metadata on disk and suits applications that need search inside one process and do not rebuild their index often.",
+      "Dense search uses HNSW through the instant-distance crate, with cosine, euclidean, and dot metrics and SIMD distance kernels. Sparse search is a built-in BM25 inverted index, and hybrid queries fuse the two by weighted sum or reciprocal-rank fusion. Filters are pushed down onto JSON metadata, with optional indexed payload fields. Writes go through a write-ahead log with crash recovery, metadata lives in bundled SQLite, and a collection can opt into int8 or 1-bit quantization.",
+      "I benchmarked it on SIFT against qdrant, chroma, and pgvector and kept the rows where it loses. The first 1M build took 3.2 hours. Adding a SIMD Euclidean kernel brought that to 2.5 hours. Compiling with target-cpu=native made the build slower on my 15 W laptop CPU, so the portable build stayed."
+    ],
+    "facts": [
+      ["SIFT 1M, ef_construction=200", "recall@10 0.9832, build 8928.4 s (2.5h)"],
+      ["SIFT 1M, ef_construction=100", "recall@10 0.9803, build 6145.6 s (1.7h), 539 qps, p50 1847 µs"],
+      ["SIFT 100k", "recall@10 0.9963, build 359.1 s, 393 qps, p50 2453 µs"],
+      ["qdrant on SIFT 1M, same harness", "recall@10 0.9952, build 211.4 s"],
+      ["Memory after 1M build", "vecdb 611 MB, qdrant 852 MB"]
+    ],
+    "limits": "Index build is the weak point: at 1M vectors it takes about 2.5 hours on a laptop against 211 s for qdrant, so it is the wrong choice for workloads that rebuild often.",
+    "install": "cargo add vecdb-core serde_json",
+    "links": { "demo": null, "crate": "vecdb-core", "npm": null, "docs": "https://docs.rs/vecdb-core" },
+    "sourceNotes": "All facts: BENCHMARK.md, 'Results, SIFT 100k', 'Results, SIFT 1M (primary, ef_construction=200)' and 'Secondary, vecdb at ef_construction=100 (1M)'. Hardware there: Intel Core i7-1355U, Windows 11, single runs. Limits: BENCHMARK.md 'Where vecdb loses' item 1, and README.md 'Scale expectations'. Install and links: README.md Quickstart and crates.io badge; vecdb-core 0.1.0 is on crates.io with this repo as its source. Caveats: BENCHMARK.md says the 1M ef=200 query latency was thermally throttled and gives only approximate corrected figures, so I list no 1M ef=200 latency. BENCHMARK.md prints 100k recall as 0.9963 in the table and 0.9966 in the prose; I used the table value. The memory figures use different measurement bases per system (BENCHMARK.md fairness notes say to treat them as order of magnitude)."
+  },
+  {
+    "repo": "logjar",
+    "kind": "tool",
+    "one": "Searchable compressed log archives: lossless, smaller than xz, and grep-able without unpacking.",
+    "body": [
+      "logjar packs log files into an archive that stays searchable. I built it for the gap between compressed logs you have to inflate with zgrep and a search cluster whose index is bigger than the logs. It ships as one static binary and an embeddable Rust library, keeps archives byte-for-byte lossless, and supports appends, live ingest, and crash recovery.",
+      "Each line is split into an optional timestamp, a template of static text with typed holes, and variables. Segments of 32 MiB store templates, a dictionary of non-numeric variables, and delta-coded variable columns in separate zstd blocks. A query compiles to a position automaton that is run symbolically over each template. If no accepting state is reachable, no line of that template can match, so it is skipped without decoding. A footer index skips segments by stream and time range.",
+      "The idea follows the CLP and LogGrep papers, with my own file format and pruning algorithm. Pruning only over-approximates, so it cannot hide a match. I test that property directly on random templates, and end to end against a naive scan with random globs, regexes, time windows, and appends. Every search count in the benchmark was checked against GNU grep."
+    ],
+    "facts": [
+      ["HDFS v1 (1.5 GiB)", "28.8x, against 16.5x for xz -9 and 16.1x for zstd -19"],
+      ["Zookeeper (9.9 MiB), highest ratio", "165.3x, against 29.6x for xz -9"],
+      ["OpenStack (38.6 MiB), lowest ratio", "20.4x, against 16.1x for xz -9"],
+      ["One block id in HDFS (268 lines)", "0.9s, against 7.9s for gzip -dc | grep"],
+      ["HDFS pack time", "12.2s, Windows 11, 8 threads"]
+    ],
+    "limits": "Grepping the raw file from a warm page cache is faster than logjar for simple literals, and there is no index on variable values, so a rare number still decodes every line of the templates where it could appear.",
+    "install": "cargo install logjar",
+    "links": { "demo": null, "crate": "logjar", "npm": null, "docs": null },
+    "sourceNotes": "Compression facts: README.md, Compression table (LogHub datasets, measured with scripts/bench.sh). Search fact: README.md, Search table. The README's opening console example shows 0.77s for the same block-id query and the Search table shows 0.9s; I used the table value. Limits: README.md, Search ('The honest summary') and Limits. Install: README.md, Install; logjar 0.1.0 is on crates.io with this repo as its source."
+  },
+  {
+    "repo": "phaedra",
+    "kind": "tool",
+    "one": "Coverage-guided fuzzer for network protocols and binary formats with LLM-generated seed inputs.",
+    "body": [
+      "Phaedra is a fuzzer for services that speak custom binary protocols. I built it for the case where you have no corpus of real traffic and would otherwise start from random bytes and spend hours getting past the first length check. You describe what the target parses in plain English, and a local Ollama model generates a structured starting corpus. It can also drive existing cargo-fuzz libFuzzer harness binaries.",
+      "Coverage comes from SanCov edge bitmaps in a 65536-slot shared memory region, cleared before each execution and compared against earlier runs. The mutator has 18 strategies picked by weighted random choice, with weights that rise when a strategy yields corpus-worthy inputs and decay slowly. A TOML schema describes fields such as u32_be, lp_bytes16_be, and magic, and with a schema loaded 30% of mutations work at the field level. Crashes are deduplicated by signal and input fingerprint and stored in SQLite.",
+      "The repo includes three built-in demo targets, each with a known bug: an HTTP Content-Length overflow, a TLV length-prefix bounds error, and an escape-handling slip in a hand-rolled JSON parser. The README says all three crash within seconds on the first run."
+    ],
+    "facts": [
+      ["Mutation strategies", "18"],
+      ["Coverage bitmap", "65536 slots"],
+      ["Field-level mutations with a schema loaded", "30%"],
+      ["Built-in demo targets", "3"]
+    ],
+    "limits": null,
+    "install": "git clone https://github.com/zaydmulani09/phaedra && cd phaedra && cargo build --release",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "All facts: README.md, How it works (coverage engine, mutation engine, schema DSL) and Demo targets. The 65536 size also appears in crates/phaedra-coverage/src/lib.rs. Limits: the README has no limitations section, so null. Install: the README Quickstart says 'cargo install phaedra', but no crate named phaedra exists on crates.io (checked 2026-11-16), so I used the README's build-from-source lines joined into one command, and links.crate is null. The demo log in the README (execs=500, unique_crashes=47) reads as sample output, so I did not use it as a fact. The README claims were not cross-checked against the code beyond the bitmap size."
+  },
+  {
+    "repo": "adya",
+    "kind": "tool",
+    "one": "Black-box transactional isolation checker, a native Rust take on the approach behind Jepsen's Elle.",
+    "body": [
+      "adya reads a history of transactions a database executed and reports which isolation guarantees held, with a step-by-step proof for each violation. I built it for people who want Elle-style checking in CI without a JVM or a Clojure toolchain. It ships as one native binary and a Rust library, reads Elle's history formats, and includes a workload runner for SQLite, Postgres, MySQL, or any database driven from a subprocess.",
+      "It pairs invocations with completions, infers version orders (for list-append, each key's longest read), and reports anomalies that need no graph, such as aborted and intermediate reads. It then builds Adya's dependency graph of ww, wr, and rw edges, checks each model's forbidden subgraph for nontrivial strongly connected components, and runs a breadth-first search over (transaction, path-state) pairs to find the shortest cycle of each anomaly class, such as G-single or G2-item.",
+      "CI holds the checker to three standards: the expected results shipped with elle-cli, a live differential run against the JVM Elle on random histories, and a simulated database with known isolation levels. Against real databases it reproduced Jepsen's 2023 finding that MySQL REPEATABLE READ permits lost updates and read skew."
+    ],
+    "facts": [
+      ["Elle expected-result cases matched", "all 56 list-append and rw-register cases"],
+      ["Live differential against JVM Elle", "identical answer on every one of the 34 histories (of 40) that Elle finished"],
+      ["100,000-transaction history (200k operations, 30 MB)", "checks in about 1.6 seconds on a laptop"],
+      ["40 histories of 300 transactions each", "checked in 0.2 seconds in total"],
+      ["Postgres SERIALIZABLE restarted nine times in a 6,000-transaction run", "still checks as strict serializable (2,957 committed, 3,043 failed or aborted)"]
+    ],
+    "limits": "Predicate workloads and Elle's other checkers (bank, set, long fork, counters) are out of scope for now, and a clean result only means no anomaly was observed in that history.",
+    "install": "cargo install adya",
+    "links": { "demo": null, "crate": "adya", "npm": null, "docs": null },
+    "sourceNotes": "56 cases, 34 of 40 histories and 0.2 seconds: README.md, 'Is it right?'. 1.6 seconds: README.md, Why. Postgres restart run: README.md, Faults. MySQL finding in body: README.md, 'What it finds'. Limits: README.md, Limitations (first and last bullets). Install: README.md, Install; adya 0.1.0 is on crates.io with this repo as its source."
+  },
+  {
+    "repo": "unsynced",
+    "kind": "tool",
+    "one": "Crash-consistency explorer that enumerates the disk states a power loss can leave and names the missing fsync.",
+    "body": [
+      "unsynced records what a program does to a directory, works out the on-disk states a power loss could leave behind, and runs your checker against each one. I built it for people who write storage code and want to know whether an acknowledged write survives a crash. Earlier tools such as ALICE are unmaintained, and kernel-level testers target file systems instead of applications. It is a single binary and a Rust library.",
+      "The CLI traces a workload with strace; a Rust Recorder captures operations in-process. Operations replay on an inode-level model and split into micro-ops a file system may persist independently: directory-entry changes, block-sized write chunks, and size changes, each tagged with the fsync that makes it durable. At every crash point it enumerates the subsets a persistence model allows (posix or ext4), deduplicates by content, runs the checker in parallel, and minimizes each failure to the lost operations that cause it.",
+      "The SQLite case study was the real test. Told nothing about SQLite, unsynced found that a commit in rollback-journal mode with synchronous=FULL can be lost because the journal unlink is not durable, which is the gap synchronous=EXTRA closes. Every verdict across the five journal and synchronous settings matched SQLite's documentation. CI reruns the study on every push."
+    ],
+    "facts": [
+      ["SQLite, journal_mode=delete, synchronous=full", "101 ops, 102 crash points, 570 unique crash states checked; 5 rejected, 1 distinct vulnerability"],
+      ["SQLite, delete / extra", "nothing found (656 states)"],
+      ["SQLite, wal / full", "nothing found (1132 states)"],
+      ["Recovery crash states, wal / full", "4000 (stopped by --max-states), clean"],
+      ["2,000 appends with an fsync every 50", "about 20 s (82k unique states) before the checker runs"]
+    ],
+    "limits": "Tracing arbitrary programs needs Linux and strace, writes through mmap are not modeled, and beyond 10 in-flight micro-ops per crash point the search samples, so a clean report falls short of a proof.",
+    "install": "cargo install unsynced",
+    "links": { "demo": null, "crate": "unsynced", "npm": null, "docs": "https://docs.rs/unsynced" },
+    "sourceNotes": "First fact: README.md, opening console example. 656, 1132 and 4000 states: README.md, 'Case study: SQLite' (both tables; SQLite 3.45, posix model). 20 s and 82k states: README.md, Limitations (Scale). Limits: README.md, Limitations (Frontends and Search). Install and links: README.md, Install and badges; unsynced 0.1.0 is on crates.io with this repo as its source."
+  },
+  {
+    "repo": "tailite",
+    "kind": "tool",
+    "one": "Row-level change data capture for any SQLite database, read from the WAL by a separate process.",
+    "body": [
+      "tailite reports which rows were inserted, updated, and deleted in a SQLite database, with before and after values, from outside the process that writes it. I built it because SQLite's update hooks and session extension only work inside the writer, and trigger-based capture changes the schema. The writing application needs no triggers, extension, or restart. Uses include watching what an app writes, feeding a search index, and auditing a database you do not own.",
+      "It reads the write-ahead log and accepts frames only when SQLite's own recovery would: matching salts, an unbroken checksum chain, and a commit frame. A read transaction held as a pin, rotated forward each poll, keeps checkpoints from overwriting frames or before-images it still needs. A page index maps b-tree pages to tables and is maintained per commit by walking from changed pages to their roots. Rows are diffed by rowid, or by primary key for WITHOUT ROWID tables.",
+      "Tests drive real SQLite: thousands of random transactions are replayed into a mirror that must equal SELECT * of every table after every poll. A concurrency test has a writer thread committing and checkpointing while the tail polls. With the pin disabled it failed on every run I tried, with vanished frames, wrong before-images, and duplicate inserts."
+    ],
+    "facts": [
+      ["Attach (index 40 MB)", "~45 ms"],
+      ["Snapshot, 200k rows", "0.37 s (~540k rows/s)"],
+      ["20k appended rows", "81 ms (~245k events/s); SQLite writing them took 183 ms"],
+      ["20k random updates", "0.66 s (~30k events/s); SQLite writing them took 0.89 s"],
+      ["20k random deletes", "1.7 s (~11k events/s); SQLite writing them took 2.6 s"]
+    ],
+    "limits": "watch needs WAL mode, changes are the net effect of each transaction, and changes committed while tailite is not running are not reported because there is no resumable position yet.",
+    "install": "cargo install tailite",
+    "links": { "demo": null, "crate": "tailite", "npm": null, "docs": null },
+    "sourceNotes": "All facts: README.md, Performance table (Windows 11 laptop, warm OS cache, 200,000-row table, 100 rows per transaction, cargo run --release --example bench). Limits: README.md, Limitations (first three bullets). Test description in body: README.md, Correctness. Install: README.md, Install; tailite 0.1.0 is on crates.io with this repo as its source."
+  },
+  {
+    "repo": "heterodyne",
+    "kind": "tool",
+    "one": "Token-by-token, layer-by-layer diff of two llama.cpp runs, with activation transplants between them.",
+    "body": [
+      "heterodyne compares two configurations of llama.cpp on identical tokens: two quantizations of a model, a quantized KV cache, a different batch size, or a fine-tune. I built it for people who run quantized GGUF models on CPU and want to know where a variant diverges, beyond one aggregate number. It runs locally in llama.cpp's own quantized kernels, with a CLI and a local web UI, no API keys and no Python.",
+      "Each arm is a GGUF file plus runtime settings. heterodyne computes exact full-vocabulary KL(A||B) and top-1 changes at every position next to a measured numerical floor, and captures the residual stream after every layer. Activation transplants write one arm's residual stream into the other after a layer, or between a layer's attention and MLP blocks, and measure the divergence that remains. A factorial attribution runs every combination of the settings that differ. Experiment files carry sha256 provenance and replay exactly.",
+      "My first version counted every position, including predictions made from one or two tokens of context, where Q4_K_M emits byte-order-mark bytes. Those few positions made up half of the mean and made the last block look responsible. Totals now leave out the first 16 tokens of each chunk. I also found that llama.cpp's CPU path gives bitwise different results at some ubatch sizes."
+    ],
+    "facts": [
+      ["Q4_K_M vs BF16, mean KL(A||B)", "0.067 (0.052 to 0.083), top-1 changed 11.6%"],
+      ["Q8_0 vs BF16, mean KL(A||B)", "0.0022 (0.0015 to 0.0028), top-1 changed 2.2%"],
+      ["q8_0 K + V cache on the same Q8_0 file", "mean KL 0.0038, top-1 changed 3.0%"],
+      ["KL left after writing BF16's residual into Q4_K_M at layer 27", "0.0013"],
+      ["BF16 vs Q4_K_M with transplants at all 28 layers (12 chunks, 708 passes)", "15 minutes on an Intel i7-1355U laptop, CPU only"]
+    ],
+    "limits": "It runs on the CPU backend only, and the published numbers come from one model, one text, and one machine, so they are observations to re-run and say nothing about GPU kernels.",
+    "install": "heterodyne serve --models ~/models",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "KL and top-1 facts: README.md, 'What it found on a laptop' (quant drift table, transplant table, runtime setting table). All are for Qwen3-0.6B, llama.cpp b11696, twelve 128-token chunks, 1,282 scored positions, 95% t-intervals over chunks. The README writes the intervals with a dash; I wrote them with 'to'. 15 minutes: README.md, Hardware and cost. Limits: README.md, Limitations (CPU backend only; 'One text is one text') and the 'One model, one text, one machine' sentence. Install: README.md, Quick start; this is the run command after downloading a release binary, since the README gives no one-line install. Body paragraph 3: README.md, the 'How these totals are computed matters' paragraph and the batch-invariance section."
+  },
+  {
+    "repo": "firsthand",
+    "kind": "tool",
+    "one": "Verifiable handoff packets for AI coding agents, under active development.",
+    "body": [
+      "Firsthand is a work in progress. The goal is a handoff between AI coding agents that the receiving side can check. When one agent stops and another picks up, the usual handoff is a summary or a transcript, which is the model's own account of what it did. I want each claim in the handoff to carry evidence, so the next agent is told what still holds, what is stale, and what is refuted.",
+      "The spec in the repo describes a hash-chained JSONL ledger of witnessed events, with BLAKE3 hashes linking entries, and a packet that is a deterministic ZIP whose manifest is signed with Ed25519. Dirty working trees are snapshotted into private git refs without touching the index or HEAD. Claims carry a scope of files and symbols and an optional probe, and resolve to three trust tiers: REPLAYED, WITNESSED, and HEARSAY. Adapters cover Claude Code, Codex, Gemini CLI, and OpenCode.",
+      "So far the agent adapters have only been tested against synthetic fixtures built from each agent's public documentation. None of the agents was installed on the build machine, and no hook has been observed firing in a live agent."
+    ],
+    "facts": [
+      ["Status", "Under active development"],
+      ["Packet format id", "firsthand.packet/1"],
+      ["Adapter testing", "synthetic fixtures only; no hook was observed firing in a live agent"]
+    ],
+    "limits": "The README says only that it is under active development, and docs/adapters.md adds that every agent adapter was tested against synthetic fixtures only.",
+    "install": null,
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "The README is three lines ('Verifiable handoff packets for AI coding agents. Under active development.'), so the body is drawn from the spec, which describes the design and may be ahead of the code. Status: README.md. Packet format id, ZIP container and Ed25519 signature: spec/PACKET.md (6.1, 6.2, 6.6). Ledger hash chain: spec/LEDGER.md (5.3, 9.1). Trust tiers: spec/TRUST.md. Snapshots into refs/firsthand/snapshots: spec/POLICY.md (8.1). Claims, scope and probes: spec/PROBES.md (5.4). Adapter testing and limits: docs/adapters.md, Compatibility matrix (recorded 2026-11-09). Problem statement in paragraph 1: docs/internal/SPEC.md 1.1. No install command exists in the README, and no crate named firsthand exists on crates.io."
+  },
+  {
+    "repo": "agentwatch",
+    "kind": "tool",
+    "one": "Local proxy and terminal dashboard that tracks token spend for AI coding agents.",
+    "body": [
+      "agentwatch shows what an AI coding session costs while it runs. I built it because agents like Claude Code, Codex, and Gemini CLI use tokens without showing the bill, and the tracking tools I found needed accounts and cloud dashboards. It is a single Rust binary with no signup. Everything it records stays in a SQLite file on your machine.",
+      "It runs a local HTTP proxy on port 7878. You point the agent's base URL at it, and each request is forwarded to the real upstream API unchanged, API keys included. agentwatch reads the usage object from each response, computes a USD cost from built-in or overridden per-1k-token prices, writes a row to SQLite, and broadcasts the event over a tokio channel to a Ratatui dashboard that shows token burn rate and cost per session."
+    ],
+    "facts": [
+      ["Default proxy port", "7878"],
+      ["Spend report", "7-day by default, --days N from 1 to 90"]
+    ],
+    "limits": null,
+    "install": null,
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Port: README.md, Config and How it works. Report window: README.md, Commands table. Limits: the README states none, so null. Install is null on purpose: the README says 'cargo install agentwatch' and shows a crates.io badge, but the agentwatch crate on crates.io (0.1.1) belongs to a different project (Calcura-Software/agentwatch), so that command would install someone else's tool. This repo's Cargo.toml is agentwatch 0.1.0. The README's Docker command pulls ghcr.io/zaydmulani09/agentwatch; I could not confirm that image exists. The README screenshot is still a placeholder line, and its comparison table against Langfuse, Datadog and LiteLLM was not used."
+  },
+  {
+    "repo": "mcp-gateway",
+    "kind": "tool",
+    "one": "Self-hosted Rust gateway for MCP servers: routing, auth, rate limiting, and request logging.",
+    "body": [
+      "MCP Gateway is a reverse proxy that sits in front of several Model Context Protocol servers and gives clients one entry point. I built it to keep routing, upstream credentials, rate limits, and request logs in one self-hosted place instead of in every client. Backends are listed in a TOML config, and a small CLI called mcpgw lists servers and shows logs and stats.",
+      "The gateway is an Axum service. Requests under /mcp/ are split into a server name and a path, looked up in the config, and proxied with reqwest after hop-by-hop headers are stripped. Upstream API keys are encrypted with AES-256-GCM under a key derived from MCPGW_MASTER_SECRET and injected at request time. A token bucket per client IP and server, held in a DashMap, returns 429 with a Retry-After header when exceeded. Each request is logged to SQLite with status and latency."
+    ],
+    "facts": [
+      ["Default rate limit", "10.0 requests per second, burst 20.0"],
+      ["Upstream client timeout", "30s"]
+    ],
+    "limits": "The Host header is forwarded as the gateway's own address instead of the upstream host, a known issue listed in CONTEXT.md.",
+    "install": "MCPGW_MASTER_SECRET=your-secret docker compose up --build",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "The README is a short quickstart, so the mechanism comes from CONTEXT.md (P2 to P7 summaries: proxy, vault, rate limiter, logger). Rate limit: config/default.toml, [gateway.rate_limit]. Timeout: CONTEXT.md, P2 Summary. Limits: CONTEXT.md, Known Issues; the README itself states no limitations. Install: README.md, Quickstart, run after cloning the repo. Left out: a test count, because CONTEXT.md says 22 in its Tests section and 19 in its P10 summary. The README mentions cost tracking; CONTEXT.md describes it as token-count extraction helpers for Anthropic and OpenAI response shapes, so I did not describe cost tracking as a feature."
+  },
+  {
+    "repo": "sentrymcp",
+    "kind": "tool",
+    "one": "Static and runtime security scanner for MCP (Model Context Protocol) servers.",
+    "body": [
+      "sentrymcp scans MCP server source for security problems and can also watch a running server. I built it for people who write or install MCP servers and want a quick check before trusting one. The static scan looks for path traversal, command injection, unsafe eval and exec, hidden instructions in tool descriptions, missing auth on network transports, and hardcoded or logged credentials.",
+      "It is a Cargo workspace of four crates. The core crate is a rule-matching engine with a directory scanner and tool-description extraction. Every detection rule lives in TOML with a severity, a CWE or OWASP reference, and a remediation, so no patterns are hardcoded in Rust. The proxy crate relays stdio traffic between an MCP client and the real server, diffs successive tools/list responses to catch a description that changes mid-session, and watches for unexpected outbound connections.",
+      "The repo carries a synthetic corpus of paired vulnerable and safe example servers, and the README badge reports 16/16 of them classified correctly. Findings from the heuristic rules, such as missing auth and homoglyphs, are meant as review prompts and will include some false positives."
+    ],
+    "facts": [
+      ["Synthetic corpus", "16/16 correct"]
+    ],
+    "limits": "Static scanning is single-pass regex over raw source with no AST or taint tracking, so it misses vulnerabilities that flow through an intermediate variable before reaching a sink.",
+    "install": "git clone https://github.com/zaydmulani09/sentrymcp.git && cd sentrymcp && cargo build --release",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "16/16: README.md, Corpus badge; the corpus/ folder holds 16 example directories (8 vulnerable-*, 8 safe-*). Limits: README.md, Limitations (first bullet). The Limitations section also says the network watcher only works on Windows (netstat-based) and reports zero connections elsewhere. Install: README.md, Install, 'From source', two lines joined into one command. Not used: the README's opening statistics about CVE counts and an Endor Labs scan, which are third-party claims with no source in the repo. The README badge says CI is not configured yet."
+  },
+  {
+    "repo": "veer",
+    "kind": "library",
+    "one": "Semantic diff engine for LLM and agent execution traces that finds where two runs diverge.",
+    "body": [
+      "veer compares two runs of an LLM agent and reports the step where they meaningfully diverge. I built it because diff, jq, and snapshot tests break down on agent traces: request ids and timestamps churn, JSON keys reorder, and whitespace drifts between runs. It treats a run as an ordered sequence of messages, tool calls, and tool results. A --check flag turns drift into an exit code for CI.",
+      "Traces in OpenAI, Anthropic, or a native format are imported onto one model, then normalized: volatile substrings are masked, JSON keys are sorted, floats are rounded. Alignment fills a Wagner-Fischer cost matrix where inserting or deleting a step costs 1 and pairing two steps costs 1 minus their similarity, allowed only above a floor. Similarity blends a Sørensen-Dice coefficient over character bigrams for text with a recursive structural score for JSON. Changed pairs get a nested word-level or JSON-path diff."
+    ],
+    "facts": [
+      ["Full diff at 50 steps", "roughly 4 ms"],
+      ["Full diff at 200 steps", "roughly 78 ms"],
+      ["Full diff at 500 steps", "roughly 0.5 s"],
+      ["Library dependencies", "three small dependencies and no unsafe code"]
+    ],
+    "limits": "Alignment is O(n*m) in time and memory and is built for traces up to about 1,000 steps, and it compares surface form after normalization, so paraphrases of free text are out of scope.",
+    "install": "cargo install veerdiff",
+    "links": { "demo": null, "crate": "veerdiff", "npm": null, "docs": "https://docs.rs/veerdiff" },
+    "sourceNotes": "Timing facts: README.md, Performance ('On a laptop (cargo bench)'). Dependencies: README.md, 'Why it's different' ('A library first'). Limits: README.md, Limitations (first and third bullets). Install and links: README.md, Install and badges; the crate is veerdiff (0.1.0 on crates.io with this repo as its source) and it installs the veer command."
+  },
+  {
+    "repo": "jevgrep",
+    "kind": "tool",
+    "one": "Semantic code search CLI: a local ripgrep shortlist re-ranked by meaning in one API call.",
+    "body": [
+      "jevgrep answers plain-English questions about a codebase, such as where the auth check happens before a database write, with ranked file:line matches. I wanted semantic search that behaves like grep: no index to build or keep fresh, and one network call per query. It is a Python CLI that needs an OpenRouter API key, plus a --dry-run mode that shows the local shortlist with no key.",
+      "ripgrep scans the repo for the query's keywords and shortlists about 30 of the strongest lines, with a pure-Python scanner as the fallback. The shortlist then goes to TypeSafe's Jev 1.13 model through OpenRouter's Decisions endpoint in one batched call, where each candidate is one option of a choice question. Jev returns a probability per option, and jevgrep maps those back to file:line and sorts. Jev is a classifier with its own endpoint, separate from chat completions.",
+      "I tested it on a Flask checkout. For the query about parsing the config file, the top result was config.py line 209, the exec(compile(...)) call inside from_pyfile, at 68.0%. That line contains none of the query words, and rg for the phrase \"parse config file\" returned 0 hits."
+    ],
+    "facts": [
+      ["Default shortlist sent to Jev", "30 candidates (keep to 50 or fewer)"],
+      ["Top result, Flask config-parsing query", "flask/config.py:209 at 68.0%"],
+      ["Jev 1.13 input price", "~$0.042 per million input tokens, output free"],
+      ["Jev context", "32k tokens"]
+    ],
+    "limits": "The keyword shortlist is capped at about 50 short candidates by Jev's 32k-token context, and the README notes that a full-repo embedding index would give better recall.",
+    "install": "pip install git+https://github.com/zaydmulani09/jevgrep",
+    "links": { "demo": null, "crate": null, "npm": null, "docs": null },
+    "sourceNotes": "Shortlist size: README.md, Usage flag table (-c, --candidates). Flask result: README.md, 'Why this beats grep (real demo)'. Price: README.md, 'Getting the key'. Context: README.md, 'How the Jev call is shaped'. Limits: the README has no limitations section; the sentence combines the 32k-token cap from 'How the Jev call is shaped' with the recall remark in 'Why it's fast'. Install: README.md, first code block; the README says 'pip install jevgrep' only 'once published', and jevgrep is not on PyPI. The '240 ms' in the README's first sample output is an illustration, so it is not listed as a fact."
+  }
+]
